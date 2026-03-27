@@ -1,0 +1,42 @@
+services:
+  npm:
+    image: jc21/nginx-proxy-manager:latest
+    container_name: npm
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      HTTP_PORT: "8181"
+      HTTPS_PORT: "8443"
+    volumes:
+      - npm_data:/data
+      - npm_letsencrypt:/etc/letsencrypt
+
+  uptime-kuma:
+    image: louislam/uptime-kuma:latest
+    container_name: uptime-kuma
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - uptime_kuma_data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  baikal:
+    image: ckulka/baikal:apache
+    container_name: baikal
+    restart: unless-stopped
+    ports:
+      - "8085:80"
+    volumes:
+      - /mnt/Memory Card/docker-data/baikal-config:/var/www/baikal/config
+      - /mnt/Memory Card/docker-data/baikal-data:/var/www/baikal/Specific
+
+volumes:
+  npm_data:
+    external: true
+    name: bkstacker_npm_data
+  npm_letsencrypt:
+    external: true
+    name: bkstacker_npm_letsencrypt
+  uptime_kuma_data:
+    external: true
+    name: bkstacker_uptime_kuma_data

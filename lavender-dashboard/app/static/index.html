@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0f0f23">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>LavenderTown Dashboard</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <div class="header-left">
+      <h1>LavenderTown</h1>
+      <span class="subtitle">cooldad.top</span>
+    </div>
+    <div class="header-right">
+      <div class="connection-status" id="sse-status" title="SSE connection">
+        <span class="status-dot"></span>
+        <span class="status-text">connecting</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- System Overview -->
+    <section id="system-section" class="section">
+      <h2>System</h2>
+      <div class="system-grid">
+        <div class="system-card" id="cpu-card">
+          <div class="card-header">
+            <span class="card-label">CPU</span>
+            <span class="card-value" id="cpu-percent">--%</span>
+          </div>
+          <div class="card-detail" id="cpu-model">AMD Ryzen 7 5800X</div>
+          <div class="card-detail" id="cpu-threads">16 threads</div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="cpu-bar" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div class="system-card" id="ram-card">
+          <div class="card-header">
+            <span class="card-label">Memory</span>
+            <span class="card-value" id="ram-percent">--%</span>
+          </div>
+          <div class="card-detail" id="ram-usage">-- / --</div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="ram-bar" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div class="system-card" id="net-card">
+          <div class="card-header">
+            <span class="card-label">Network</span>
+            <span class="card-value" id="net-interface">enp6s0</span>
+          </div>
+          <div class="card-detail" id="net-ip">192.168.1.222</div>
+          <div class="card-detail">
+            <span id="net-sent">-- sent</span> / <span id="net-recv">-- recv</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Storage -->
+    <section id="storage-section" class="section">
+      <h2>Storage</h2>
+      <div class="storage-grid" id="storage-grid">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <!-- Network Topology -->
+    <section id="topology-section" class="section">
+      <h2>Network Topology</h2>
+      <div id="topology" class="topology-container">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <!-- Containers -->
+    <section id="containers-section" class="section">
+      <h2>Containers <span class="container-count" id="container-count"></span></h2>
+      <div id="container-stacks">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

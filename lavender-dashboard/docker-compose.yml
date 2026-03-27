@@ -1,0 +1,19 @@
+services:
+  lavender-dashboard:
+    build: .
+    container_name: lavender-dashboard
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      DASHBOARD_PORT: "7575"
+      HOST_PROC: "/host/proc"
+      HOST_SYS: "/host/sys"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /home:/host/home:ro
+      - /mnt/Shigawire:/host/mnt/Shigawire:ro
+      - "/mnt/Memory Card:/host/mnt/Memory Card:ro"
+      - "/mnt/Bill's Computer:/host/mnt/Bill's Computer:ro"
+    read_only: true

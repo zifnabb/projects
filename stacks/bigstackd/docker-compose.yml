@@ -1,0 +1,109 @@
+services:
+  pihole:
+    image: pihole/pihole:latest
+    container_name: pihole
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      TZ: "${PIHOLE_TZ}"
+      WEBPASSWORD: "${PIHOLE_PASSWORD}"
+      DNSMASQ_LISTENING: "all"
+      DHCP_ACTIVE: "true"
+      DHCP_START: "${DHCP_START}"
+      DHCP_END: "${DHCP_END}"
+      DHCP_ROUTER: "${DHCP_ROUTER}"
+      PIHOLE_DNS_1: "1.1.1.1"
+      PIHOLE_DNS_2: "8.8.8.8"
+      VIRTUAL_HOST: "fuschia.cooldad.top"
+      FTLCONF_webserver_port: "8088"
+    volumes:
+      - pihole_config:/etc/pihole
+      - pihole_dnsmasq:/etc/dnsmasq.d
+    cap_add:
+      - NET_ADMIN
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --protocol http2 run
+    network_mode: host
+    environment:
+      TUNNEL_TOKEN: "${TUNNEL_TOKEN}"
+    depends_on:
+      - pihole
+
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      DOMAIN: "${VAULTWARDEN_DOMAIN}"
+      ADMIN_TOKEN: "${VAULTWARDEN_ADMIN_TOKEN}"
+      SIGNUPS_ALLOWED: "false"
+      INVITATIONS_ALLOWED: "true"
+      LOG_LEVEL: "warn"
+      ROCKET_PORT: "8084"
+      ROCKET_WORKERS: "10"
+      WEB_VAULT_ENABLED: "true"
+    volumes:
+      - /home/mrfuji/vaultwarden:/data
+
+  authentik-server:
+    image: ghcr.io/goauthentik/server:2026.2
+    container_name: authentik-server
+    restart: unless-stopped
+    network_mode: host
+    command: server
+    environment:
+      AUTHENTIK_HOST: ${AUTHENTIK_HOST}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+      AUTHENTIK_POSTGRESQL__HOST: localhost
+      AUTHENTIK_POSTGRESQL__PORT: "5434"
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_PG_PASS}
+      AUTHENTIK_REDIS__HOST: localhost
+      AUTHENTIK_REDIS__PORT: "6379"
+      AUTHENTIK_LISTEN__HTTP: 0.0.0.0:9010
+      AUTHENTIK_LISTEN__HTTPS: 0.0.0.0:9444
+      AUTHENTIK_LISTEN__METRICS: 0.0.0.0:9301
+      AUTHENTIK_EMAIL__HOST: localhost
+      AUTHENTIK_EMAIL__PORT: "25"
+      AUTHENTIK_EMAIL__FROM: auth@cooldad.top
+      AUTHENTIK_EMAIL__USE_TLS: "false"
+      AUTHENTIK_EMAIL__USE_SSL: "false"
+    volumes:
+      - /mnt/Memory Card/docker-data/authentik-media:/media
+      - /mnt/Memory Card/docker-data/authentik-templates:/templates
+
+  authentik-worker:
+    image: ghcr.io/goauthentik/server:2026.2
+    container_name: authentik-worker
+    restart: unless-stopped
+    network_mode: host
+    command: worker
+    environment:
+      AUTHENTIK_HOST: ${AUTHENTIK_HOST}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+      AUTHENTIK_POSTGRESQL__HOST: localhost
+      AUTHENTIK_POSTGRESQL__PORT: "5434"
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_PG_PASS}
+      AUTHENTIK_REDIS__HOST: localhost
+      AUTHENTIK_REDIS__PORT: "6379"
+      AUTHENTIK_EMAIL__HOST: localhost
+      AUTHENTIK_EMAIL__PORT: "25"
+      AUTHENTIK_EMAIL__FROM: auth@cooldad.top
+      AUTHENTIK_EMAIL__USE_TLS: "false"
+      AUTHENTIK_EMAIL__USE_SSL: "false"
+    volumes:
+      - /mnt/Memory Card/docker-data/authentik-media:/media
+      - /mnt/Memory Card/docker-data/authentik-templates:/templates
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  pihole_config:
+  pihole_dnsmasq:

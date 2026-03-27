@@ -1,0 +1,170 @@
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    container_name: jellyfin
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
+    volumes:
+      - jellyfin_config:/config
+      - jellyfin_cache:/cache
+      - /mnt/media/movies:/data/movies
+      - /mnt/media/tv:/data/tv
+
+  jellyseerr:
+    image: fallenbagel/jellyseerr:latest
+    container_name: jellyseerr
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      TZ: ${TZ}
+    volumes:
+      - jellyseerr_config:/app/config
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
+    volumes:
+      - sonarr_config:/config
+      - /mnt/media/tv:/tv
+      - /mnt/media/downloads:/downloads
+
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
+    volumes:
+      - radarr_config:/config
+      - /mnt/media/movies:/movies
+      - /mnt/media/downloads:/downloads
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    restart: unless-stopped
+    network_mode: host
+    dns: 127.0.0.1
+    dns_search: .
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
+      WEBUI_PORT: "8090"
+    volumes:
+      - qbittorrent_config:/config
+      - /mnt/media/downloads:/downloads
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
+    volumes:
+      - prowlarr_config:/config
+
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      LOG_LEVEL: info
+      TZ: ${TZ}
+
+  immich-server:
+    image: ghcr.io/immich-app/immich-server:release
+    container_name: immich-server
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      TZ: ${TZ}
+      DB_HOSTNAME: localhost
+      DB_USERNAME: immich
+      DB_PASSWORD: ${IMMICH_DB_PASSWORD}
+      DB_DATABASE_NAME: immich
+      REDIS_HOSTNAME: localhost
+    volumes:
+      - /mnt/media/photos:/usr/src/app/upload
+      - /etc/localtime:/etc/localtime:ro
+
+  immich-machine-learning:
+    image: ghcr.io/immich-app/immich-machine-learning:release
+    container_name: immich-machine-learning
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - immich_ml_cache:/cache
+
+  piped-backend:
+    image: 1337kavin/piped:latest
+    container_name: piped-backend
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      PORT: "8081"
+    volumes:
+      - /root/stacks/bkstacker/piped/config.properties:/app/config.properties:ro
+
+  piped-frontend:
+    image: piped-frontend-custom:latest
+    container_name: piped-frontend
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      API_URL: https://rocketcorner.cooldad.top
+      BACKEND_HOSTNAME: rocketcorner.cooldad.top
+      HTTP_PORT: "8889"
+    volumes:
+      - /root/stacks/bkstacker/piped/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+  piped-proxy:
+    image: 1337kavin/piped-proxy:latest
+    container_name: piped-proxy
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      UDS: "0"
+
+volumes:
+  jellyfin_config:
+    external: true
+    name: bkstacker_jellyfin_config
+  jellyfin_cache:
+    external: true
+    name: bkstacker_jellyfin_cache
+  jellyseerr_config:
+    external: true
+    name: bkstacker_jellyseerr_config
+  sonarr_config:
+    external: true
+    name: bkstacker_sonarr_config
+  radarr_config:
+    external: true
+    name: bkstacker_radarr_config
+  qbittorrent_config:
+    external: true
+    name: bkstacker_qbittorrent_config
+  prowlarr_config:
+    external: true
+    name: bkstacker_prowlarr_config
+  immich_ml_cache:
+    external: true
+    name: bkstacker_immich_ml_cache
