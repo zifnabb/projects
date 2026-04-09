@@ -30,19 +30,6 @@ services:
     volumes:
       - /mnt/Memory Card/docker-data/immich-pg:/var/lib/postgresql/data
 
-  piped-postgres:
-    image: postgres:15-alpine
-    container_name: piped-postgres
-    restart: unless-stopped
-    network_mode: host
-    environment:
-      POSTGRES_DB: piped
-      POSTGRES_USER: piped
-      POSTGRES_PASSWORD: piped
-      PGPORT: "5433"
-    volumes:
-      - /mnt/Memory Card/docker-data/piped-pg:/var/lib/postgresql/data
-
   immich-redis:
     image: redis:6.2-alpine
     container_name: immich-redis
@@ -51,11 +38,21 @@ services:
     volumes:
       - /mnt/Memory Card/docker-data/immich-redis:/data
 
-  piped-redis:
-    image: redis:7-alpine
-    container_name: piped-redis
+  invidious-postgres:
+    image: postgres:15-alpine
+    container_name: invidious-postgres
     restart: unless-stopped
     network_mode: host
-    command: redis-server --port 6380
+    command: -p 5435
+    environment:
+      POSTGRES_DB: invidious
+      POSTGRES_USER: kemal
+      POSTGRES_PASSWORD: ${INVIDIOUS_PG_PASS}
     volumes:
-      - /mnt/Memory Card/docker-data/piped-redis:/data
+      - /mnt/Memory Card/docker-data/invidious-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d invidious -U kemal -p 5435"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s

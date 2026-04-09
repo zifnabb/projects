@@ -11,7 +11,7 @@ Documentation and Docker Compose configurations for managing homelab container s
 - **Domain**: `*.cooldad.top` (via Cloudflare Tunnel)
 - **SSH**: `mrfuji@diglettscave.cooldad.top` (Cloudflare Tunnel)
 - **Stack path**: `/root/stacks/`
-- **Media storage**: `/mnt/media/`
+- **Media storage**: `/mnt/Bill's Computer/` (movies, downloads, photos) and `/mnt/Memory Card/` (tv, downloads)
 - **Docker data**: `/mnt/Memory Card/docker-data/`
 
 ## Stacks
@@ -21,7 +21,7 @@ Documentation and Docker Compose configurations for managing homelab container s
 | [bigstackd](stacks/bigstackd/) | Core system services | Pi-hole, Cloudflared, Vaultwarden, Authentik |
 | [infra](stacks/infra/) | Infrastructure & tooling | NPM, Uptime Kuma, Baikal |
 | [databases](stacks/databases/) | Shared database layer | PostgreSQL x3, Redis x2 |
-| [media](stacks/media/) | Streaming, photos & media | Jellyfin, *arr suite, Immich, Piped |
+| [media](stacks/media/) | Streaming, photos & media | Jellyfin, *arr suite, Immich, Invidious |
 | [mailserver](stacks/mailserver/) | Self-hosted email | Docker Mailserver, SnappyMail |
 | [lavender-dashboard](stacks/lavender-dashboard/) | Dashboard | LavenderTown Dashboard |
 
@@ -41,22 +41,22 @@ Documentation and Docker Compose configurations for managing homelab container s
 | 5001 | Dockge | (system) |
 | 5055 | Jellyseerr | media |
 | 5432 | PostgreSQL — Immich | databases |
-| 5433 | PostgreSQL — Piped | databases |
+| 5435 | PostgreSQL — Invidious | databases |
 | 5434 | PostgreSQL — Authentik | databases |
 | 6379 | Redis — Immich | databases |
-| 6380 | Redis — Piped | databases |
 | 7575 | LavenderTown Dashboard | lavender-dashboard |
 | 7878 | Radarr | media |
 | 8084 | Vaultwarden | bigstackd |
 | 8085 | Baikal | infra |
+| 8081 | Invidious | media |
 | 8088 | Pi-hole (Web UI) | bigstackd |
 | 8090 | qBittorrent | media |
 | 8096 | Jellyfin | media |
 | 8181 | NPM (HTTP Admin) | infra |
 | 8191 | FlareSolverr | media |
+| 8282 | Invidious Companion (localhost) | media |
 | 8443 | NPM (HTTPS) | infra |
 | 8888 | SnappyMail | mailserver |
-| 8889 | Piped Frontend | media |
 | 8989 | Sonarr | media |
 | 9010 | Authentik (HTTP) | bigstackd |
 | 9301 | Authentik (Metrics) | bigstackd |
@@ -80,10 +80,9 @@ Documentation and Docker Compose configurations for managing homelab container s
 | `pewter.cooldad.top` | Uptime Kuma | Authentik |
 | `photos.cooldad.top` | Immich | - |
 | `powerplant.cooldad.top` | qBittorrent | Authentik |
-| `rocketcorner.cooldad.top` | Piped API | - |
-| `rockethideout.cooldad.top` | Piped Proxy | - |
+| `rocketcorner.cooldad.top` | Invidious | - |
+| `rockethideout.cooldad.top` | Invidious Companion | - |
 | `rocktunnel.cooldad.top` | Radarr | Authentik |
-| `silphco.cooldad.top` | Piped Frontend | Authentik |
 | `viridian.cooldad.top` | Baikal | - |
 | `webmail.cooldad.top` | SnappyMail | - |
 

@@ -11,8 +11,8 @@ services:
     volumes:
       - jellyfin_config:/config
       - jellyfin_cache:/cache
-      - /mnt/media/movies:/data/movies
-      - /mnt/media/tv:/data/tv
+      - /mnt/Bill's Computer/movies:/data/movies
+      - /mnt/Memory Card/tv:/data/tv
 
   jellyseerr:
     image: fallenbagel/jellyseerr:latest
@@ -35,8 +35,8 @@ services:
       TZ: ${TZ}
     volumes:
       - sonarr_config:/config
-      - /mnt/media/tv:/tv
-      - /mnt/media/downloads:/downloads
+      - /mnt/Memory Card/tv:/tv
+      - /mnt/Memory Card/downloads:/downloads
 
   radarr:
     image: lscr.io/linuxserver/radarr:latest
@@ -49,8 +49,8 @@ services:
       TZ: ${TZ}
     volumes:
       - radarr_config:/config
-      - /mnt/media/movies:/movies
-      - /mnt/media/downloads:/downloads
+      - /mnt/Bill's Computer/movies:/movies
+      - /mnt/Bill's Computer/downloads:/downloads
 
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
@@ -66,7 +66,8 @@ services:
       WEBUI_PORT: "8090"
     volumes:
       - qbittorrent_config:/config
-      - /mnt/media/downloads:/downloads
+      - /mnt/Bill's Computer/downloads:/downloads/movies
+      - /mnt/Memory Card/downloads:/downloads/tv
 
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
@@ -102,7 +103,7 @@ services:
       DB_DATABASE_NAME: immich
       REDIS_HOSTNAME: localhost
     volumes:
-      - /mnt/media/photos:/usr/src/app/upload
+      - /mnt/Bill's Computer/photos:/usr/src/app/upload
       - /etc/localtime:/etc/localtime:ro
 
   immich-machine-learning:
@@ -113,35 +114,51 @@ services:
     volumes:
       - immich_ml_cache:/cache
 
-  piped-backend:
-    image: 1337kavin/piped:latest
-    container_name: piped-backend
+  invidious:
+    image: quay.io/invidious/invidious:latest
+    container_name: invidious
     restart: unless-stopped
     network_mode: host
     environment:
-      PORT: "8081"
-    volumes:
-      - /root/stacks/bkstacker/piped/config.properties:/app/config.properties:ro
+      # Invidious listens on port 8081 (replacing piped-backend's port)
+      INVIDIOUS_CONFIG: |
+        db:
+          dbname: invidious
+          user: kemal
+          password: ${INVIDIOUS_PG_PASS}
+          host: 127.0.0.1
+          port: 5435
+        check_tables: true
+        hmac_key: ${INVIDIOUS_HMAC_KEY}
+        domain: rocketcorner.cooldad.top
+        https_only: true
+        external_port: 443
+        port: 8081
+        host_binding: 0.0.0.0
+        statistics_enabled: false
+        popular_enabled: true
+        captcha_enabled: false
+        login_enabled: true
+        registration_enabled: true
+        admins: []
+        default_user_preferences:
+          dark_mode: "dark"
+          quality: dash
+          quality_dash: auto
+        invidious_companion:
+          - private_url: "http://127.0.0.1:8282/companion"
+            public_url: "https://rockethideout.cooldad.top/companion"
+        invidious_companion_key: ${INVIDIOUS_COMPANION_SECRET}
 
-  piped-frontend:
-    image: piped-frontend-custom:latest
-    container_name: piped-frontend
+  invidious-companion:
+    image: quay.io/invidious/invidious-companion:latest
+    container_name: invidious-companion
     restart: unless-stopped
     network_mode: host
     environment:
-      API_URL: https://rocketcorner.cooldad.top
-      BACKEND_HOSTNAME: rocketcorner.cooldad.top
-      HTTP_PORT: "8889"
-    volumes:
-      - /root/stacks/bkstacker/piped/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-
-  piped-proxy:
-    image: 1337kavin/piped-proxy:latest
-    container_name: piped-proxy
-    restart: unless-stopped
-    network_mode: host
-    environment:
-      UDS: "0"
+      PORT: "8282"
+      HOST: "0.0.0.0"
+      SERVER_SECRET_KEY: ${INVIDIOUS_COMPANION_SECRET}
 
 volumes:
   jellyfin_config:

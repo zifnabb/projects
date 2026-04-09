@@ -15,9 +15,8 @@ Streaming, photos, media management, and YouTube frontend.
 | FlareSolverr | `ghcr.io/flaresolverr/flaresolverr:latest` | 8191 | — | — |
 | Immich | `ghcr.io/immich-app/immich-server:release` | 2283 | `photos.cooldad.top` | — |
 | Immich ML | `ghcr.io/immich-app/immich-machine-learning:release` | 3003 | — | — |
-| Piped Frontend | `piped-frontend-custom:latest` | 8889 | `silphco.cooldad.top` | Authentik |
-| Piped Backend | `1337kavin/piped:latest` | 8081 | `rocketcorner.cooldad.top` | — |
-| Piped Proxy | `1337kavin/piped-proxy:latest` | 8080 | `rockethideout.cooldad.top` | — |
+| Invidious | `quay.io/invidious/invidious:latest` | 8081 | `rocketcorner.cooldad.top` | — |
+| Invidious Companion | `quay.io/invidious/invidious-companion:latest` | 8282 | `rockethideout.cooldad.top` | — |
 
 ## Data Flow
 
@@ -37,20 +36,24 @@ Jellyseerr (requests) → Sonarr/Radarr → Prowlarr (indexers) → qBittorrent 
 
 | Mount | Contents |
 |-------|----------|
-| `/mnt/media/movies` | Movie library |
-| `/mnt/media/tv` | TV show library |
-| `/mnt/media/downloads` | Download staging area |
-| `/mnt/media/photos` | Immich photo uploads |
+| `/mnt/Bill's Computer/movies` | Movie library |
+| `/mnt/Memory Card/tv` | TV show library |
+| `/mnt/Bill's Computer/downloads` | Movie download staging (Radarr/qBittorrent `/downloads/movies`) |
+| `/mnt/Memory Card/downloads` | TV download staging (Sonarr/qBittorrent `/downloads/tv`) |
+| `/mnt/Bill's Computer/photos` | Immich photo uploads |
 
 ## Service Notes
 
-### Piped
+### Invidious
 
-Self-hosted YouTube frontend with three components. Config files live at `/root/stacks/bkstacker/piped/`.
+Self-hosted YouTube frontend, replaced Piped. Uses `invidious-postgres` (port 5435, user `kemal`) from the databases stack.
 
-- **Backend** runs on port `8081` (not the default 8080). The `PORT` env var must be set to `8081` for the Docker healthcheck to work.
-- **Frontend** is a custom-built image (`piped-frontend-custom:latest`).
-- **Depends on**: `piped-postgres` and `piped-redis` (databases stack)
+- **Port**: `8081` (reusing Piped's old backend port)
+- **Config**: Inlined via `INVIDIOUS_CONFIG` env var in `docker-compose.yml`
+- **Companion**: `invidious-companion` handles YouTube stream proxying. Binds to `0.0.0.0:8282` and is exposed publicly at `https://rockethideout.cooldad.top/companion` via NPM proxy host 16. Browser playback requires this companion URL.
+- **Secrets** (via stack env): `INVIDIOUS_PG_PASS`, `INVIDIOUS_HMAC_KEY`, `INVIDIOUS_COMPANION_SECRET`
+
+> **Note**: Companion serves under the `/companion` path, not root. Both `private_url` and `public_url` in the Invidious config must include the `/companion` suffix, or Invidious cannot reach it.
 
 ### Immich
 
@@ -58,7 +61,7 @@ Photo management with ML-powered search. Depends on `immich-postgres` and `immic
 
 ### qBittorrent
 
-DNS set to `127.0.0.1` (Pi-hole) for ad-blocking on tracker connections.
+DNS set to `127.0.0.1` (Pi-hole) for ad-blocking on tracker connections. Downloads are split across two mounts: `/downloads/movies` → `/mnt/Bill's Computer/downloads`, `/downloads/tv` → `/mnt/Memory Card/downloads`.
 
 ## External Volume Dependencies
 
