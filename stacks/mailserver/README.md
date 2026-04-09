@@ -6,7 +6,7 @@ Self-hosted email with webmail client for `cooldad.top`.
 
 | Service | Image | Port | Subdomain | Auth |
 |---------|-------|------|-----------|------|
-| Docker Mailserver | `ghcr.io/docker-mailserver/docker-mailserver:latest` | 25, 143, 587, 993 | `mail.cooldad.top` (hostname) | — |
+| Docker Mailserver | `ghcr.io/docker-mailserver/docker-mailserver:latest` | 25, 143, 465, 587 | `mail.cooldad.top` (hostname) | — |
 | SnappyMail | `djmaze/snappymail:latest` | 8888 | `webmail.cooldad.top` | — |
 
 ## Service Details

@@ -32,9 +32,12 @@ Documentation and Docker Compose configurations for managing homelab container s
 | 25 | Docker Mailserver (SMTP) | mailserver |
 | 53 | Pi-hole (DNS) | bigstackd |
 | 67 | Pi-hole (DHCP) | bigstackd |
+| 80 | NPM (HTTP) | infra |
+| 81 | NPM (Admin UI) | infra |
 | 143 | Docker Mailserver (IMAP) | mailserver |
+| 443 | NPM (HTTPS) | infra |
+| 465 | Docker Mailserver (SMTPS) | mailserver |
 | 587 | Docker Mailserver (Submission) | mailserver |
-| 993 | Docker Mailserver (IMAPS) | mailserver |
 | 2283 | Immich | media |
 | 3001 | Uptime Kuma | infra |
 | 3003 | Immich ML | media |
@@ -52,10 +55,8 @@ Documentation and Docker Compose configurations for managing homelab container s
 | 8088 | Pi-hole (Web UI) | bigstackd |
 | 8090 | qBittorrent | media |
 | 8096 | Jellyfin | media |
-| 8181 | NPM (HTTP Admin) | infra |
 | 8191 | FlareSolverr | media |
-| 8282 | Invidious Companion (localhost) | media |
-| 8443 | NPM (HTTPS) | infra |
+| 8282 | Invidious Companion | media |
 | 8888 | SnappyMail | mailserver |
 | 8989 | Sonarr | media |
 | 9010 | Authentik (HTTP) | bigstackd |

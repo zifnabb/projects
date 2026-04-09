@@ -6,7 +6,7 @@ Reverse proxy, monitoring, and calendar.
 
 | Service | Image | Port | Subdomain | Auth |
 |---------|-------|------|-----------|------|
-| Nginx Proxy Manager | `jc21/nginx-proxy-manager:latest` | 8181 (HTTP), 8443 (HTTPS) | — | — |
+| Nginx Proxy Manager | `jc21/nginx-proxy-manager:latest` | 80 (HTTP), 81 (Admin UI), 443 (HTTPS) | — | — |
 | Uptime Kuma | `louislam/uptime-kuma:latest` | 3001 | `pewter.cooldad.top` | Authentik |
 | Baikal | `ckulka/baikal:apache` | 8085 | `viridian.cooldad.top` | — |
 
@@ -16,7 +16,7 @@ Reverse proxy, monitoring, and calendar.
 
 Reverse proxy for all externally-accessible services. Cloudflare tunnel terminates at NPM, which routes by subdomain. Also handles Authentik forward auth integration for protected services.
 
-- **Admin UI**: `http://<server>:8181`
+- **Admin UI**: `http://<server>:81` (note: compose sets `HTTP_PORT=8181`/`HTTPS_PORT=8443`, but these env vars are ignored under `network_mode: host` — nginx binds 80/81/443)
 - **Volumes**: `npm_data`, `npm_letsencrypt` (external, from bkstacker)
 
 ### Uptime Kuma
