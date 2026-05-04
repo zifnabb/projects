@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Twitter Account Analysis — 73 Accounts</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #1a1a1a;
+    --border: #2a2a2a;
+    --text: #e8e8e8;
+    --muted: #888;
+    --accent: #7c6aff;
+    --warn: #ff6b6b;
+    --ok: #4ecdc4;
+    --yellow: #ffd166;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 2rem; }
+  h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+  .subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; }
+  .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.2rem; }
+  .stat-val { font-size: 2rem; font-weight: 700; }
+  .stat-label { font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat.warn .stat-val { color: var(--warn); }
+  .stat.ok .stat-val { color: var(--ok); }
+  .stat.accent .stat-val { color: var(--accent); }
+  .stat.yellow .stat-val { color: var(--yellow); }
+  .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; }
+  .card h2 { font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1rem; }
+  canvas { max-height: 260px; }
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; overflow-x: auto; }
+  .table-wrap h2 { font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  th { text-align: left; padding: 0.5rem 0.75rem; color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 0.45rem 0.75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  .badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; font-weight: 600; }
+  .badge.warn { background: rgba(255,107,107,0.15); color: var(--warn); }
+  .badge.ok { background: rgba(78,205,196,0.15); color: var(--ok); }
+  .badge.accent { background: rgba(124,106,255,0.15); color: var(--accent); }
+  .badge.muted { background: rgba(136,136,136,0.1); color: var(--muted); }
+  .note { color: var(--muted); font-size: 0.78rem; margin-top: 0.75rem; }
+</style>
+</head>
+<body>
+
+<h1>Twitter Account Analysis</h1>
+<p class="subtitle">73 screenshots · 71 unique accounts · Captured 2026-05-03 – 2026-05-04</p>
+
+<div class="stat-row">
+  <div class="stat accent"><div class="stat-val">71</div><div class="stat-label">Unique accounts</div></div>
+  <div class="stat yellow"><div class="stat-val">28</div><div class="stat-label">Created in May 2026 (≤4 days old)</div></div>
+  <div class="stat warn"><div class="stat-val">34</div><div class="stat-label">Safety warning (shield)</div></div>
+  <div class="stat ok"><div class="stat-val">17</div><div class="stat-label">Info icon present</div></div>
+  <div class="stat accent"><div class="stat-val">26</div><div class="stat-label">Verified accounts</div></div>
+  <div class="stat warn"><div class="stat-val">27</div><div class="stat-label">No location set</div></div>
+</div>
+
+<div class="charts">
+  <div class="card">
+    <h2>Top Locations</h2>
+    <canvas id="locationChart"></canvas>
+  </div>
+  <div class="card">
+    <h2>Account Age Distribution (join year)</h2>
+    <canvas id="joinYearChart"></canvas>
+  </div>
+  <div class="card">
+    <h2>Platform / Connection Method</h2>
+    <canvas id="platformChart"></canvas>
+  </div>
+  <div class="card">
+    <h2>Verification vs Safety Warning</h2>
+    <canvas id="verifyWarnChart"></canvas>
+  </div>
+  <div class="card">
+    <h2>Username Changes Distribution</h2>
+    <canvas id="usernameChangesChart"></canvas>
+  </div>
+  <div class="card">
+    <h2>Safety Warning by Location</h2>
+    <canvas id="locationWarnChart"></canvas>
+  </div>
+</div>
+
+<div class="table-wrap">
+  <h2>All Accounts</h2>
+  <table id="accountTable">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Display Name</th>
+        <th>Username</th>
+        <th>Joined</th>
+        <th>Location</th>
+        <th>Platform</th>
+        <th>Verified</th>
+        <th>Username Changes</th>
+        <th>Safety</th>
+        <th>Info</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <p class="note">* @imaboredgoat appears 3× in screenshots — counted once above. Safety warning and info icon are mutually exclusive in this dataset.</p>
+</div>
+
+<script>
+const accounts = [
+  {"display_name":"frog","username":"@Frogincrisis","date_joined":"January 2024","location":"Mongolia","username_changes":10,"connected_via":"Mongolia Android App","verified":true,"verified_since":"March 2026","has_safety_warning":true,"has_info_icon":false},
+  {"display_name":"Tortoise","username":"@TortoiseInCrise","date_joined":"May 2026","location":"Nigeria","username_changes":null,"connected_via":"Web","verified":false,"verified_since":"","has_safety_warning":true,"has_info_icon":false},
+  {"display_name":"Panda.","username":"@Panda48382704","date_joined":"June 2024","location":"Nigeria","username_changes":null,"connected_via":"Nigeria Android App","verified":false,"verified_since":"","has_safety_warning":true,"has_info_icon":false},
+  {"display_name":"Owl","username":"@HootCuisine","date_joined":"December 2025","location":"India","username_changes":2,"connected_via":"India Android App","verified":true,"verified_since":"May 2026","has_safety_warning":true,"has_info_icon":false},
+  {"display_name":"Lion","username":"@LionInCrisis","date_joined":"April 2026","location":"South Asia","username_changes":2,"connected_via":"Web","verified":true,"verified_since":"May 2026","has_safety_warning":true,"has_info_icon":false},
+  {"display_name":"Black Mamba","username":"@Mambaincrisis","date_joined":"October 2025","location":"Africa","username_changes":8,"connected_via":"Africa App Store","verified":false,"verified_since":"","has_safety_warning":true,"has_info_icon":false},
+  {"display_name":"Snake","username":"@sssnakeInCrisis","date_joined":"April 2024","location":"Africa","username_changes":3,"connected_via":"Africa Android App","verified":false,"verified_since":"","has_safety_warning":true,"has_info_icon":false},
+  {"display_name":"Bad Badger","username":"@badgerincrisis","date_joined":"May 2026","location":"Nigeria","username_changes":null,"connected_via":"Web","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":true},
+  {"display_name":"WartHog","username":"@StankAssHog","date_joined":"May 2026","location":"","username_changes":null,"connected_via":"Web","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":false},
+  {"display_name":"Pig","username":"@pigincrisis","date_joined":"January 2026","location":"Nigeria","username_changes":1,"connected_via":"Nigeria App Store","verified":false,"verified_since":"","has_safety_warning":true,"has_info_icon":false},
+  {"display_name":"Goat","username":"@imaboredgoat","date_joined":"July 2024","location":"India","username_changes":4,"connected_via":"India Android App","verified":true,"verified_since":"April 2026","has_safety_warning":true,"has_info_icon":false},
+  {"display_name":"Owl","username":"@owltwting","date_joined":"May 2026","location":"","username_changes":null,"connected_via":"Web","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":false},
+  {"display_name":"Cheetah","username":"@fastasfucq","date_joined":"May 2026","location":"","username_changes":null,"connected_via":"Web","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":false},
+  {"display_name":"Ape","username":"@Ape635321347572","date_joined":"May 2026","location":"","username_changes":null,"connected_via":"Web","verified":true,"verified_since":"May 2026","has_safety_warning":false,"has_info_icon":false},
+  {"display_name":"goat","username":"@ghgoat_","date_joined":"January 2019","location":"Africa","username_changes":1,"connected_via":"North America App Store","verified":true,"verified_since":"July 2025","has_safety_warning":false,"has_info_icon":true},
+  {"display_name":"Bee","username":"@BeeInCrisis","date_joined":"May 2026","location":"","username_changes":null,"connected_via":"Web","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":false},
+  {"display_name":"Snail","username":"@1snailincrisis","date_joined":"May 2026","location":"","username_changes":null,"connected_via":"Web","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":false},
+  {"display_name":"frog","username":"@croakdealer","date_joined":"May 2026","location":"","username_changes":null,"connected_via":"Web","verified":true,"verified_since":"May 2026","has_safety_warning":false,"has_info_icon":false},
+  {"display_name":"Octopus","username":"@octopuzincrisis","date_joined":"May 2026","location":"","username_changes":null,"connected_via":"Web","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":false},
+  {"display_name":"T-Rex","username":"@dinoincrisis","date_joined":"February 2026","location":"South Asia","username_changes":1,"connected_via":"South Asia App Store","verified":true,"verified_since":"February 2026","has_safety_warning":false,"has_info_icon":true},
+  {"display_name":"Pigeon","username":"@GigaGreNinja","date_joined":"October 2025","location":"India","username_changes":1,"connected_via":"India Android App","verified":false,"verified_since":"","has_safety_warning":true,"has_info_icon":false},
+  {"display_name":"Cassowary","username":"@cassowarybird","date_joined":"April 2026","location":"Kenya","username_changes":1,"connected_via":"Web","verified":true,"verified_since":"May 2026","has_safety_warning":false,"has_info_icon":true},
+  {"display_name":"Cloudy Catshark","username":"@scyliorincrisis","date_joined":"May 2026","location":"","username_changes":null,"connected_via":"Web","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":false},
+  {"display_name":"octopus","username":"@WeBeKraken","date_joined":"May 2026","location":"","username_changes":null,"connected_via":"Web","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":false},
+  {"display_name":"Squirrel","username":"@SquirrelDih","date_joined":"May 2026","location":"","username_changes":null,"connected_via":"Web","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":false},
+  {"display_name":"Lynx","username":"@Lynxtweeting","date_joined":"May 2026","location":"","username_changes":null,"connected_via":"Web","verified":true,"verified_since":"May 2026","has_safety_warning":false,"has_info_icon":false},
+  {"display_name":"sheep","username":"@sheeptwting","date_joined":"May 2026","location":"","username_changes":null,"connected_via":"Web","verified":true,"verified_since":"May 2026","has_safety_warning":false,"has_info_icon":false},
+  {"display_name":"Raccoon","username":"@raccoontlk","date_joined":"May 2026","location":"","username_changes":null,"connected_via":"Web","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":false},
+  {"display_name":"Raven","username":"@RKS1231740","date_joined":"March 2024","location":"South Asia","username_changes":null,"connected_via":"South Asia Android App","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":true},
+  {"display_name":"Lion","username":"@_Jsins","date_joined":"January 2024","location":"Ghana","username_changes":1,"connected_via":"Ghana App Store","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":true},
+  {"display_name":"Monkey","username":"@monkeyincrisis","date_joined":"February 2026","location":"India","username_changes":1,"connected_via":"India Android App","verified":true,"verified_since":"May 2026","has_safety_warning":false,"has_info_icon":true},
+  {"display_name":"the bull","username":"@BullOnStandby","date_joined":"January 2026","location":"India","username_changes":1,"connected_via":"Web","verified":true,"verified_since":"April 2026","has_safety_warning":false,"has_info_icon":true},
+  {"display_name":"Farmer","username":"@l3vvrayson","date_joined":"January 2023","location":"Kenya","username_changes":3,"connected_via":"Kenya Android App","verified":false,"verified_since":"","has_safety_warning":true,"has_info_icon":false},
+  {"display_name":"Catincrissis","username":"@NobodyTellsU","date_joined":"February 2026","location":"Nigeria","username_changes":1,"connected_via":"Nigeria App Store","verified":false,"verified_since":"","has_safety_warning":true,"has_info_icon":false},
+  {"display_name":"CROW","username":"@CrowCrisis1","date_joined":"April 2026","location":"South Asia","username_changes":1,"connected_via":"Web","verified":true,"verified_since":"April 2026","has_safety_warning":true,"has_info_icon":false},
+  {"display_name":"Brachiosaur","username":"@longnecktie","date_joined":"February 2026","location":"India","username_changes":2,"connected_via":"India App Store","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":true},
+  {"display_name":"Crane","username":"@CraneInCrisis","date_joined":"May 2026","location":"","username_changes":null,"connected_via":"Web","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":false},
+  {"display_name":"Squirrel","username":"@NutsInCrisis","date_joined":"April 2026","location":"India","username_changes":1,"connected_via":"Web","verified":true,"verified_since":"April 2026","has_safety_warning":false,"has_info_icon":true},
+  {"display_name":"Horse","username":"@Horseincrisis_","date_joined":"February 2026","location":"South Asia","username_changes":3,"connected_via":"South Asia Android App","verified":true,"verified_since":"April 2026","has_safety_warning":false,"has_info_icon":true},
+  {"display_name":"Chicken","username":"@FarmChickenBob","date_joined":"May 2026","location":"","username_changes":null,"connected_via":"Web","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":false},
+  {"display_name":"Lizard","username":"@LizardIncrisis","date_joined":"June 2025","location":"India","username_changes":1,"connected_via":"India Android App","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":true},
+  {"display_name":"Dog","username":"@cooldogify","date_joined":"March 2026","location":"India","username_changes":1,"connected_via":"India Android App","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":true},
+  {"display_name":"Donkey","username":"@donkyincrisis","date_joined":"May 2026","location":"","username_changes":null,"connected_via":"Web","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":false},
+  {"display_name":"Lion","username":"@Lionomercy","date_joined":"January 2026","location":"Africa","username_changes":2,"connected_via":"Africa Android App","verified":false,"verified_since":"","has_safety_warning":true,"has_info_icon":false},
+  {"display_name":"SWAN","username":"@swan_myst","date_joined":"April 2026","location":"","username_changes":1,"connected_via":"Web","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":false},
+  {"display_name":"hedgehog","username":"@notonuisance","date_joined":"March 2026","location":"Nigeria","username_changes":null,"connected_via":"Nigeria Android App","verified":false,"verified_since":"","has_safety_warning":true,"has_info_icon":false},
+  {"display_name":"Hamster","username":"@HamstersMatter2","date_joined":"May 2026","location":"","username_changes":null,"connected_via":"Web","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":false},
+  {"display_name":"pingu","username":"@pingu4ll","date_joined":"December 2025","location":"Africa","username_changes":1,"connected_via":"Africa Android App","verified":true,"verified_since":"April 2026","has_safety_warning":true,"has_info_icon":false},
+  {"display_name":"Goose","username":"@airhornWwings","date_joined":"May 2026","location":"","username_changes":null,"connected_via":"Web","verified":true,"verified_since":"May 2026","has_safety_warning":false,"has_info_icon":false},
+  {"display_name":"Cheetah","username":"@BMI074","date_joined":"March 2024","location":"Nigeria","username_changes":1,"connected_via":"Nigeria Android App","verified":false,"verified_since":"","has_safety_warning":true,"has_info_icon":false},
+  {"display_name":"Eagle","username":"@cooked_energy","date_joined":"April 2020","location":"Pakistan","username_changes":2,"connected_via":"Pakistan Android App","verified":true,"verified_since":"December 2025","has_safety_warning":true,"has_info_icon":false},
+  {"display_name":"Polar Bear","username":"@AnimalCrisisX","date_joined":"May 2026","location":"","username_changes":null,"connected_via":"Web","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":false},
+  {"display_name":"Dog (Dogesh bhai)","username":"@urlocaldoggy","date_joined":"January 2026","location":"South Asia","username_changes":1,"connected_via":"South Asia Android App","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":true},
+  {"display_name":"Cat","username":"@CatinnCrisis","date_joined":"May 2026","location":"","username_changes":null,"connected_via":"Web","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":false},
+  {"display_name":"COW","username":"@HolyCowBroo","date_joined":"February 2026","location":"Africa","username_changes":1,"connected_via":"Africa Android App","verified":false,"verified_since":"","has_safety_warning":true,"has_info_icon":false},
+  {"display_name":"Praying Mantis","username":"@Prayers4Mantis","date_joined":"May 2026","location":"","username_changes":null,"connected_via":"Web","verified":true,"verified_since":"May 2026","has_safety_warning":false,"has_info_icon":false},
+  {"display_name":"Bandariya (Female Monkey)","username":"@Nayra_raro","date_joined":"November 2025","location":"India","username_changes":1,"connected_via":"India Android App","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":true},
+  {"display_name":"Nakedmoleratincrisis","username":"@Nakedmoleratcri","date_joined":"May 2026","location":"","username_changes":null,"connected_via":"Web","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":false},
+  {"display_name":"rat","username":"@ratincontrol","date_joined":"August 2025","location":"Nigeria","username_changes":6,"connected_via":"Nigeria Android App","verified":false,"verified_since":"","has_safety_warning":true,"has_info_icon":false},
+  {"display_name":"Crow","username":"@Croww_things","date_joined":"October 2022","location":"India","username_changes":9,"connected_via":"India Android App","verified":true,"verified_since":"April 2026","has_safety_warning":false,"has_info_icon":true},
+  {"display_name":"peacock","username":"@Peacock_crisis","date_joined":"January 2026","location":"Nigeria","username_changes":1,"connected_via":"Nigeria Android App","verified":false,"verified_since":"","has_safety_warning":true,"has_info_icon":false},
+  {"display_name":"Komodo.","username":"@kdincrisis","date_joined":"January 2026","location":"South Africa","username_changes":1,"connected_via":"South Africa App Store","verified":false,"verified_since":"","has_safety_warning":true,"has_info_icon":false},
+  {"display_name":"Buffalo","username":"@theblackbuffalO","date_joined":"January 2026","location":"South Asia","username_changes":3,"connected_via":"South Asia Android App","verified":true,"verified_since":"May 2026","has_safety_warning":true,"has_info_icon":false},
+  {"display_name":"Porcupine","username":"@SexyPorcupine_","date_joined":"May 2024","location":"Ghana","username_changes":3,"connected_via":"Ghana App Store","verified":false,"verified_since":"","has_safety_warning":true,"has_info_icon":false},
+  {"display_name":"Turkey","username":"@turkeyiincrisis","date_joined":"December 2024","location":"Africa","username_changes":3,"connected_via":"Africa Android App","verified":false,"verified_since":"","has_safety_warning":true,"has_info_icon":false},
+  {"display_name":"Gorrilla","username":"@gorrillacrisis","date_joined":"May 2026","location":"","username_changes":null,"connected_via":"Web","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":false},
+  {"display_name":"camel","username":"@Rajasathani_4","date_joined":"September 2020","location":"India","username_changes":7,"connected_via":"India Android App","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":true},
+  {"display_name":"crocodile","username":"@crocodilecrisis","date_joined":"January 2026","location":"Africa","username_changes":2,"connected_via":"North Africa App Store","verified":false,"verified_since":"","has_safety_warning":true,"has_info_icon":false},
+  {"display_name":"Dingo","username":"@Dingowazhiznamo","date_joined":"May 2026","location":"","username_changes":null,"connected_via":"Web","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":false},
+  {"display_name":"Kangaroo","username":"@Kangaroocrisis","date_joined":"July 2013","location":"Nigeria","username_changes":1,"connected_via":"Nigeria App Store","verified":false,"verified_since":"","has_safety_warning":true,"has_info_icon":false},
+  {"display_name":"Emu","username":"@Emuincrisis","date_joined":"May 2026","location":"","username_changes":null,"connected_via":"Web","verified":false,"verified_since":"","has_safety_warning":false,"has_info_icon":false}
+];
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+function count(arr) {
+  return arr.reduce((acc, v) => { acc[v] = (acc[v] || 0) + 1; return acc; }, {});
+}
+const palette = ['#7c6aff','#4ecdc4','#ffd166','#ff6b6b','#a8e6cf','#ff8b94','#c7ceea','#f8b500','#b5ead7','#ff9aa2'];
+
+const CHART_DEFAULTS = {
+  color: '#e8e8e8',
+  plugins: { legend: { labels: { color: '#888', boxWidth: 12 } } },
+  scales: {}
+};
+Chart.defaults.color = '#888';
+
+// ── Location chart ───────────────────────────────────────────────────────────
+const locRaw = accounts.map(a => a.location || 'Unknown');
+const locCounts = count(locRaw);
+const locSorted = Object.entries(locCounts).sort((a,b) => b[1]-a[1]);
+new Chart(document.getElementById('locationChart'), {
+  type: 'bar',
+  data: {
+    labels: locSorted.map(x => x[0]),
+    datasets: [{ data: locSorted.map(x => x[1]), backgroundColor: palette, borderRadius: 4 }]
+  },
+  options: {
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { color: '#888' }, grid: { color: '#222' } },
+      y: { ticks: { color: '#888', stepSize: 1 }, grid: { color: '#222' } }
+    }
+  }
+});
+
+// ── Join year chart ──────────────────────────────────────────────────────────
+function extractYear(s) {
+  const m = s.match(/\d{4}/);
+  return m ? m[0] : 'Unknown';
+}
+const yearCounts = count(accounts.map(a => extractYear(a.date_joined)));
+const yearSorted = Object.entries(yearCounts).sort((a,b) => a[0].localeCompare(b[0]));
+new Chart(document.getElementById('joinYearChart'), {
+  type: 'bar',
+  data: {
+    labels: yearSorted.map(x => x[0]),
+    datasets: [{ data: yearSorted.map(x => x[1]), backgroundColor: '#7c6aff', borderRadius: 4 }]
+  },
+  options: {
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { color: '#888' }, grid: { color: '#222' } },
+      y: { ticks: { color: '#888', stepSize: 1 }, grid: { color: '#222' } }
+    }
+  }
+});
+
+// ── Platform chart ───────────────────────────────────────────────────────────
+function platformCategory(via) {
+  if (!via) return 'Unknown';
+  if (via === 'Web') return 'Web';
+  if (via.includes('Android')) return 'Android App';
+  if (via.includes('App Store')) return 'iOS App Store';
+  return 'Other';
+}
+const platCounts = count(accounts.map(a => platformCategory(a.connected_via)));
+const platSorted = Object.entries(platCounts).sort((a,b) => b[1]-a[1]);
+new Chart(document.getElementById('platformChart'), {
+  type: 'doughnut',
+  data: {
+    labels: platSorted.map(x => x[0]),
+    datasets: [{ data: platSorted.map(x => x[1]), backgroundColor: palette, borderWidth: 0 }]
+  },
+  options: {
+    plugins: { legend: { position: 'right', labels: { color: '#888', padding: 12 } } },
+    cutout: '60%'
+  }
+});
+
+// ── Verified vs safety warning ────────────────────────────────────────────────
+const vw = [
+  { label: 'Verified only', count: accounts.filter(a => a.verified && !a.has_safety_warning).length },
+  { label: 'Verified + Warning', count: accounts.filter(a => a.verified && a.has_safety_warning).length },
+  { label: 'Warning only', count: accounts.filter(a => !a.verified && a.has_safety_warning).length },
+  { label: 'Neither', count: accounts.filter(a => !a.verified && !a.has_safety_warning && !a.has_info_icon).length },
+  { label: 'Info icon', count: accounts.filter(a => a.has_info_icon).length }
+];
+new Chart(document.getElementById('verifyWarnChart'), {
+  type: 'doughnut',
+  data: {
+    labels: vw.map(x => x.label),
+    datasets: [{ data: vw.map(x => x.count), backgroundColor: ['#4ecdc4','#ffd166','#ff6b6b','#444','#7c6aff'], borderWidth: 0 }]
+  },
+  options: {
+    plugins: { legend: { position: 'right', labels: { color: '#888', padding: 10 } } },
+    cutout: '55%'
+  }
+});
+
+// ── Username changes ─────────────────────────────────────────────────────────
+const changeBuckets = { '0': 0, '1': 0, '2–3': 0, '4–5': 0, '6+': 0, 'Unknown': 0 };
+accounts.forEach(a => {
+  const n = a.username_changes;
+  if (n === null) changeBuckets['Unknown']++;
+  else if (n === 0) changeBuckets['0']++;
+  else if (n === 1) changeBuckets['1']++;
+  else if (n <= 3) changeBuckets['2–3']++;
+  else if (n <= 5) changeBuckets['4–5']++;
+  else changeBuckets['6+']++;
+});
+new Chart(document.getElementById('usernameChangesChart'), {
+  type: 'bar',
+  data: {
+    labels: Object.keys(changeBuckets),
+    datasets: [{ data: Object.values(changeBuckets), backgroundColor: ['#4ecdc4','#7c6aff','#ffd166','#ff8b94','#ff6b6b','#555'], borderRadius: 4 }]
+  },
+  options: {
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { color: '#888' }, grid: { color: '#222' } },
+      y: { ticks: { color: '#888', stepSize: 1 }, grid: { color: '#222' } }
+    }
+  }
+});
+
+// ── Safety warning by location ────────────────────────────────────────────────
+const locWarn = {};
+accounts.forEach(a => {
+  const loc = a.location || 'Unknown';
+  if (!locWarn[loc]) locWarn[loc] = { warn: 0, ok: 0 };
+  if (a.has_safety_warning) locWarn[loc].warn++;
+  else locWarn[loc].ok++;
+});
+const lwSorted = Object.entries(locWarn).sort((a,b) => (b[1].warn+b[1].ok)-(a[1].warn+a[1].ok));
+new Chart(document.getElementById('locationWarnChart'), {
+  type: 'bar',
+  data: {
+    labels: lwSorted.map(x => x[0]),
+    datasets: [
+      { label: 'Safety Warning', data: lwSorted.map(x => x[1].warn), backgroundColor: '#ff6b6b', borderRadius: 2 },
+      { label: 'No Warning', data: lwSorted.map(x => x[1].ok), backgroundColor: '#4ecdc4', borderRadius: 2 }
+    ]
+  },
+  options: {
+    plugins: { legend: { labels: { color: '#888' } } },
+    scales: {
+      x: { stacked: true, ticks: { color: '#888' }, grid: { color: '#222' } },
+      y: { stacked: true, ticks: { color: '#888', stepSize: 1 }, grid: { color: '#222' } }
+    }
+  }
+});
+
+// ── Table ─────────────────────────────────────────────────────────────────────
+const tbody = document.querySelector('#accountTable tbody');
+accounts.forEach((a, i) => {
+  const tr = document.createElement('tr');
+  const verBadge = a.verified
+    ? `<span class="badge ok">✓ Verified</span>`
+    : `<span class="badge muted">—</span>`;
+  const safetyBadge = a.has_safety_warning
+    ? `<span class="badge warn">⚠ Shield</span>`
+    : a.has_info_icon
+    ? `<span class="badge accent">ℹ Info</span>`
+    : `<span class="badge muted">—</span>`;
+  const changes = a.username_changes !== null ? a.username_changes : '<span style="color:#555">—</span>';
+  tr.innerHTML = `
+    <td style="color:#555">${i+1}</td>
+    <td>${a.display_name}</td>
+    <td style="font-family:monospace;color:#aaa">${a.username}</td>
+    <td style="color:#aaa;white-space:nowrap">${a.date_joined}</td>
+    <td style="color:#aaa">${a.location || '<span style="color:#555">—</span>'}</td>
+    <td style="color:#aaa;font-size:0.78rem">${a.connected_via}</td>
+    <td>${verBadge}</td>
+    <td style="text-align:center">${changes}</td>
+    <td>${safetyBadge}</td>
+    <td style="text-align:center">${a.has_info_icon ? '<span class="badge accent">ℹ</span>' : ''}</td>
+  `;
+  tbody.appendChild(tr);
+});
+</script>
+</body>
+</html>
