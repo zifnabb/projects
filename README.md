@@ -24,6 +24,7 @@ Documentation and Docker Compose configurations for managing homelab container s
 | [media](stacks/media/) | Streaming, photos & media | Jellyfin, *arr suite, Immich, Invidious |
 | [mailserver](stacks/mailserver/) | Self-hosted email | Docker Mailserver, SnappyMail |
 | [lavender-dashboard](stacks/lavender-dashboard/) | Dashboard | LavenderTown Dashboard |
+| [lunamultiplayer](stacks/lunamultiplayer/) | KSP multiplayer game server | LunaMultiplayer (SplitProgression fork) |
 
 ## Port Map
 
@@ -62,6 +63,7 @@ Documentation and Docker Compose configurations for managing homelab container s
 | 9010 | Authentik (HTTP) | bigstackd |
 | 9301 | Authentik (Metrics) | bigstackd |
 | 9444 | Authentik (HTTPS) | bigstackd |
+| 8800 | LunaMultiplayer (UDP) | lunamultiplayer |
 | 9696 | Prowlarr | media |
 
 ## Known Subdomains (Cloudflare Tunnel → NPM)
@@ -94,9 +96,10 @@ stacks/
 ├── bigstackd/              # Pi-hole, Cloudflared, Vaultwarden, Authentik
 ├── infra/                  # NPM, Uptime Kuma, Baikal
 ├── databases/              # PostgreSQL x3, Redis x2
-├── media/                  # Jellyfin, *arr, Immich, Piped
+├── media/                  # Jellyfin, *arr, Immich, Invidious
 ├── mailserver/             # Docker Mailserver, SnappyMail
-└── lavender-dashboard/     # LavenderTown Dashboard
+├── lavender-dashboard/     # LavenderTown Dashboard
+└── lunamultiplayer/        # KSP LunaMultiplayer game server
 ```
 
 Each stack directory contains:
