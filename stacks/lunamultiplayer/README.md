@@ -51,7 +51,7 @@ Fully shared career — all Split flags disabled:
 | `SplitExperimentalPart` | `false` |
 | `SplitKerbals` | `false` |
 
-Other notable settings: no reverts, 168h respawn, 1.2x gain multipliers, 0 decline penalty, G/pressure limits enabled, comm blackout, DSN 1.5x, 2x resources.
+Other notable settings: reverts enabled, 168h respawn, 1.2x gain multipliers, 0 decline penalty, G/pressure limits enabled, comm blackout, DSN 1.5x, 2x resources, AutoDekessler every 60 min.
 
 ### Mod Control
 
@@ -66,16 +66,28 @@ NAT punchthrough via LMP master server — no router port-forward needed for bro
 ## Operations
 
 ### Restart (apply config changes)
+
+**Always restart twice.** A stale UDP packet hits the server on every first startup and causes a fatal deserialization error that blocks all connections. The second restart clears it.
+
 ```sh
-sudo sh -c 'cd /root/stacks/lunamultiplayer && docker compose restart'
+sudo bash -c 'cd /root/stacks/lunamultiplayer && docker compose down && docker compose up -d'
+# wait ~5 seconds, then:
+sudo bash -c 'cd /root/stacks/lunamultiplayer && docker compose down && docker compose up -d'
 ```
 
+> **Never use `docker compose restart`** — it does not fully flush the UDP buffer and will leave stale packets.
+
 ### Reset Universe (wipe all career progress)
+
+Wipe **while the container is down** to prevent the server from flushing cached state back to disk on next startup. Then apply the mandatory double restart:
+
 ```sh
-sudo sh -c 'cd /root/stacks/lunamultiplayer && docker compose down'
-sudo rm -rf /root/stacks/lunamultiplayer/data/Universe/*
-sudo sh -c 'cd /root/stacks/lunamultiplayer && docker compose up -d'
+sudo bash -c 'cd /root/stacks/lunamultiplayer && docker compose down && rm -rf data/Universe/*'
+sudo bash -c 'cd /root/stacks/lunamultiplayer && docker compose up -d'
+# wait ~5 seconds, then:
+sudo bash -c 'cd /root/stacks/lunamultiplayer && docker compose down && docker compose up -d'
 ```
+
 > **Never wipe Config unless explicitly intended** — this holds passwords, game mode, mod control, and all server settings.
 
 ### Push a config file from local
@@ -93,7 +105,7 @@ cat <local-file> | ssh mrfuji@diglettscave.cooldad.top 'sudo tee /root/stacks/lu
 ## Known Quirks
 
 - `End of stdin, stopping command listener` on boot — benign, no TTY in detached mode
-- `Cannot deserialize this type of message!` fatal after restart — stale UDP buffer; fix with full `down && up` (not just `restart`)
+- `Cannot deserialize this type of message!` fatal after every restart — stale UDP buffer hits the server on first startup every time; mandatory double `down && up` is the permanent workaround (see Restart procedure above)
 - Toggling individual Split* flags on a live universe corrupts PlayerCareers JSON — requires universe wipe to fix
 
 ## Client Mod Locations
@@ -109,3 +121,4 @@ cat <local-file> | ssh mrfuji@diglettscave.cooldad.top 'sudo tee /root/stacks/lu
 |------|-------|
 | 2026-04-17 | Stack deployed |
 | 2026-05-05 | Universe wiped — fresh start; split career fully disabled |
+| 2026-05-08 | Universe wiped; reverts enabled; AutoDekessler set to 60 min; mod control updated; double-restart procedure documented |
