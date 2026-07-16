@@ -14,6 +14,12 @@ Documentation and Docker Compose configurations for managing homelab container s
 - **Media storage**: `/mnt/Bill's Computer/` (movies, downloads, photos) and `/mnt/Memory Card/` (tv, downloads)
 - **Docker data**: `/mnt/Memory Card/docker-data/`
 
+### Internal / Test Hosts
+- `terrenceb-dl` (10.33.22.17) — internal development/test box, accessed via nested SSH through LavenderTown.
+- Important path for test work: `/media/terrenceb/mnt/testbox_home/copilot/Test-cases/` (enrichment, JIRA/Testlink tooling and data).
+- The `Test-cases/` directory in this repo is a synced mirror of the above location.
+- See [Test-cases/README.md](Test-cases/README.md) for the full project framing: improving AWPTCM Manual Test Cases by deriving Objectives from TestLink history + enriched Automated Suites, plus many-to-one suite-to-manual mappings. Also referenced from [AGENTS.md](AGENTS.md).
+
 ## Stacks
 
 | Stack | Description | Services |
@@ -24,7 +30,7 @@ Documentation and Docker Compose configurations for managing homelab container s
 | [media](stacks/media/) | Streaming, photos & media | Jellyfin, *arr suite, Immich, Invidious |
 | [mailserver](stacks/mailserver/) | Self-hosted email | Docker Mailserver, SnappyMail |
 | [lavender-dashboard](stacks/lavender-dashboard/) | Dashboard | LavenderTown Dashboard |
-| [lunamultiplayer](stacks/lunamultiplayer/) | KSP multiplayer game server | LunaMultiplayer (SplitProgression fork) |
+| [mcp](stacks/mcp/) | MCP server for local AI | lavender-mcp (Docker + stack management tools) |
 
 ## Port Map
 
@@ -63,8 +69,34 @@ Documentation and Docker Compose configurations for managing homelab container s
 | 9010 | Authentik (HTTP) | bigstackd |
 | 9301 | Authentik (Metrics) | bigstackd |
 | 9444 | Authentik (HTTPS) | bigstackd |
-| 8800 | LunaMultiplayer (UDP) | lunamultiplayer |
 | 9696 | Prowlarr | media |
+| 3389 | xrdp (RDP desktop access) | host |
+
+## Remote Desktop (RDP / XFCE)
+
+LavenderTown has xrdp installed on the host for graphical desktop sessions (XFCE4).
+
+**Client on macOS**: Microsoft **Windows App** (formerly Microsoft Remote Desktop from the App Store / Mac App Store).
+
+**How to connect**:
+- Add a new PC / connection.
+- PC name / Host: the server's address that can reach TCP port 3389 directly.
+  - Typically the LAN IP (e.g. `192.168.x.x` or `10.33.x.x`) or a VPN hostname (Tailscale, etc.).
+  - **Note**: `diglettscave.cooldad.top` and Cloudflare Tunnel + NPM are for HTTP/SSH only. Raw RDP (3389) requires direct/LAN/VPN reachability.
+- Port: `3389` (default).
+- User name: `mrfuji`
+- Connect with your normal user password.
+
+The session starts XFCE4 (with tweaks in `~/.xsession` for better RDP compatibility: X11 forced, compositing off, no screen blanking).
+
+**Internal ports**:
+- 3389: xrdp (public-facing for the RDP protocol)
+- 3350: xrdp-sesman (localhost only — the session manager that xrdp talks to)
+
+If you ever see "Error connecting to sesman on 127.0.0.1:3350", restart the services on the host:
+```sh
+sudo systemctl restart xrdp xrdp-sesman
+```
 
 ## Known Subdomains (Cloudflare Tunnel → NPM)
 
@@ -99,13 +131,22 @@ stacks/
 ├── media/                  # Jellyfin, *arr, Immich, Invidious
 ├── mailserver/             # Docker Mailserver, SnappyMail
 ├── lavender-dashboard/     # LavenderTown Dashboard
-└── lunamultiplayer/        # KSP LunaMultiplayer game server
+└── mcp/                    # MCP server for local AI agents
 ```
 
 Each stack directory contains:
-- `docker-compose.yml` — the Compose file (mirrors what Dockge manages)
 - `README.md` — stack-specific documentation, configuration notes, and upgrade instructions
+
+For most stacks, `docker-compose.yml` is also present (mirrors what Dockge manages). For custom-built images (lavender-dashboard, mcp), the build context (Dockerfile + source) lives in a sibling directory at the repo root; a reference compose may be synced into the stack dir for Dockge builds using `build: .`.
 
 ## Legacy
 
 The `bkstacker` stack on the server is the original monolith that all current stacks were split from. Its named volumes are still referenced as external volumes by the `infra` and `media` stacks. The `authentik` stack directory on the server appears to be an earlier standalone attempt and is superseded by the `bigstackd` and `databases` configurations.
+
+**Deprecated / Removed services (as of 2026-07):**
+
+- **LunaMultiplayer (LMP / lunamultiplayer)**: KSP multiplayer server (PlagueNZ SplitProgression fork). All containers and custom `lmp-splitprog:*` images removed. The server-side stack directory no longer exists. UDP port 8800 service discontinued. See `stacks/lunamultiplayer/README.md` (archived) for historical configuration and universe notes. **No longer required or maintained until further notice.**
+
+- **Satisfactory**: Test game server (`wolveix/satisfactory-server`). Container and image removed. The entire `/root/stacks/satisfactory/` stack directory (including compose, data, and backups) has been deleted. Previously used as a non-critical test target.
+
+These services have been fully purged from Docker and the stack layout. Documentation has been annotated; they can be reintroduced later if needed.

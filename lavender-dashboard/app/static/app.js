@@ -100,13 +100,14 @@ function updateContainers(stacks) {
   wrapper.innerHTML = '';
 
   // Stack ordering
-  const stackOrder = ['bigstackd', 'infra', 'databases', 'media', 'mailserver', 'system'];
+  const stackOrder = ['bigstackd', 'infra', 'databases', 'media', 'mailserver', 'mcp', 'system'];
   const stackColors = {
     bigstackd: 'var(--stack-bigstackd)',
     infra: 'var(--stack-infra)',
     databases: 'var(--stack-databases)',
     media: 'var(--stack-media)',
     mailserver: 'var(--stack-mailserver)',
+    mcp: 'var(--stack-mcp)',
     system: 'var(--stack-system)',
   };
   const stackLabels = {
@@ -115,6 +116,7 @@ function updateContainers(stacks) {
     databases: 'Databases',
     media: 'Media & Streaming',
     mailserver: 'Email',
+    mcp: 'MCP / AI Tools',
     system: 'System',
   };
 

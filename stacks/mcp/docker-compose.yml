@@ -1,0 +1,18 @@
+services:
+  mcp-server:
+    build: .
+    container_name: lavender-mcp
+    restart: "no"  # stdio MCP servers exit when no input; clients use docker exec -i. Set to unless-stopped only if using HTTP mode persistently.
+    network_mode: host
+    environment:
+      STACKS_DIR: "/stacks"
+      MCP_TRANSPORT: "http"
+      MCP_HOST: "0.0.0.0"
+      MCP_PORT: "8765"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /root/stacks:/stacks:ro
+    # The MCP server is primarily used via `docker run -i` or `docker exec -i`
+    # from local AI clients (stdio mode). For HTTP mode set MCP_TRANSPORT=http
+    # and connect via SSH tunnel or NPM proxy (see README).
+    # For build to work with `build: .`, the files must be present in /root/stacks/mcp/.

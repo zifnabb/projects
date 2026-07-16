@@ -1,12 +1,25 @@
 # Luna Multiplayer Stack
 
-KSP multiplayer game server using the [PlagueNZ SplitProgression fork](https://github.com/PlagueNZ/LunaMultiplayer-SplitProgression) of LunaMultiplayer.
+> **⚠️ DEPRECATED / REMOVED — 2026-07**
+>
+> This service is **no longer active or required** on the LavenderTown homelab until further notice.
+>
+> - All containers removed.
+> - All custom images (`lmp-splitprog:*`) purged from Docker.
+> - Server stack directory (`/root/stacks/lunamultiplayer/`) does not exist.
+> - UDP 8800 service discontinued.
+>
+> This README is retained **for historical reference only**.
+>
+> See root `README.md` Legacy section for deprecation notes.
 
-## Services
+KSP multiplayer game server using the [PlagueNZ SplitProgression fork](https://github.com/PlagueNZ/LunaMultiplayer-SplitProgression) of LunaMultiplayer (archived configuration below).
+
+## Services (historical)
 
 | Service | Image | Port | Protocol |
 |---------|-------|------|----------|
-| lunamultiplayer | `lmp-splitprog:master-contractfix` | 8800 | UDP |
+| lunamultiplayer (removed) | `lmp-splitprog:*` (all tags removed) | 8800 UDP (discontinued) | — |
 
 - **Server name**: `FromUndahCheese`
 - **Network**: `host` mode — container binds directly to host network stack (required for LMP NAT punchthrough)
@@ -122,3 +135,4 @@ cat <local-file> | ssh mrfuji@diglettscave.cooldad.top 'sudo tee /root/stacks/lu
 | 2026-04-17 | Stack deployed |
 | 2026-05-05 | Universe wiped — fresh start; split career fully disabled |
 | 2026-05-08 | Universe wiped; reverts enabled; AutoDekessler set to 60 min; mod control updated; double-restart procedure documented |
+| 2026-07-02 | **Deprecated and fully removed**: containers + all `lmp-splitprog` images deleted; `/root/stacks/lunamultiplayer/` no longer present on server. Service discontinued until further notice. |
