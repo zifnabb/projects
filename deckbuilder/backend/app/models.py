@@ -128,3 +128,60 @@ class PasswordReset(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class Deck(Base):
+    __tablename__ = "decks"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    format: Mapped[str] = mapped_column(String(32), nullable=False, default="commander")
+    commander_oracle_id: Mapped[str | None] = mapped_column(String(36))
+    color_identity: Mapped[list[str]] = mapped_column(ARRAY(String(1)), nullable=False, default=list)
+    description: Mapped[str | None] = mapped_column(Text)
+    deck_art_oracle_id: Mapped[str | None] = mapped_column(String(36))
+    visibility: Mapped[str] = mapped_column(String(16), nullable=False, default="private")
+    share_token: Mapped[str | None] = mapped_column(String(64), unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    # Reserved grading hooks (inert until post-MVP, PLAN §6)
+    commandersalt_hash: Mapped[str | None] = mapped_column(String(128))
+    grade_json: Mapped[dict | None] = mapped_column(JSONB)
+    graded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class DeckCategory(Base):
+    __tablename__ = "deck_categories"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    deck_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    target_min: Mapped[int | None] = mapped_column(Integer)
+    target_max: Mapped[int | None] = mapped_column(Integer)
+    color_tag: Mapped[str | None] = mapped_column(String(16))
+    source: Mapped[str] = mapped_column(String(16), nullable=False, default="user")  # template|user
+
+
+class DeckCard(Base):
+    __tablename__ = "deck_cards"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    deck_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    oracle_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    board: Mapped[str] = mapped_column(String(16), nullable=False, default="main")  # main|side|maybe|command
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    finish: Mapped[str | None] = mapped_column(String(16))
+    printing_id: Mapped[str | None] = mapped_column(String(36))
+    category_id: Mapped[str | None] = mapped_column(String(36))
+
+
+class DeckTag(Base):
+    __tablename__ = "deck_tags"
+
+    deck_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    tag: Mapped[str] = mapped_column(String(48), primary_key=True)
+    source: Mapped[str] = mapped_column(String(16), nullable=False, default="user")  # user|system
