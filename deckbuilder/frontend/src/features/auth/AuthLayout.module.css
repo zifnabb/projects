@@ -1,0 +1,99 @@
+/* Focused shell (DESIGN §6.2-C / §8.1) — centered ~440px card on canvas. */
+.shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8);
+  gap: var(--space-7);
+}
+
+.wordmarkRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-9) var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  margin: 0;
+  color: var(--color-text);
+}
+
+.subtitle {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--color-text-muted);
+  margin: calc(-1 * var(--space-4)) 0 0;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* Rate-limit / generic error as an inline caption under the button (§8.1) —
+   never a modal. */
+.formError {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--color-danger);
+  margin: 0;
+}
+
+.footer {
+  display: flex;
+  justify-content: center;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.themeToggle {
+  position: fixed;
+  top: var(--space-6);
+  right: var(--space-6);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out);
+}
+.themeToggle:hover {
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
+}
+
+.notice {
+  font-size: 13px;
+  line-height: 18px;
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-sm);
+  background: var(--color-danger-tint);
+  color: var(--color-text);
+}

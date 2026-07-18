@@ -1,9 +1,26 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>vermilion</title>
+    <script>
+      // Pre-hydration theme (DESIGN §10.1): set data-theme before first paint
+      // so there is no theme flash. Default dark; honor stored pref, else OS.
+      (function () {
+        try {
+          var t = localStorage.getItem("vermilion-theme");
+          if (t !== "dark" && t !== "light") {
+            t = window.matchMedia("(prefers-color-scheme: light)").matches
+              ? "light"
+              : "dark";
+          }
+          document.documentElement.setAttribute("data-theme", t);
+        } catch (e) {
+          /* default dark stays */
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

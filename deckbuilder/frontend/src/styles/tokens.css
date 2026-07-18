@@ -1,0 +1,268 @@
+/* ==========================================================================
+   vermilion — design tokens (DESIGN.md §3 color, §4 type, §6.1 space/radius,
+   §9 motion, §10 theming). Two tiers: primitives (theme-independent) → semantic
+   (per-theme). Components reference ONLY semantic tokens.
+   ========================================================================== */
+
+/* ---- Fonts (self-hosted; no runtime CDN — PLAN §4) ---------------------- */
+@font-face {
+  font-family: "Cinzel";
+  src: url("/fonts/Cinzel.ttf") format("truetype");
+  font-weight: 400 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Libre Franklin";
+  src: url("/fonts/LibreFranklin.ttf") format("truetype");
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Sanguine Frost";
+  src: url("/fonts/SanguineFrost.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+
+/* ---- Tier 1: primitives (theme-independent ramps, DESIGN §3) ------------ */
+:root {
+  /* Vermilion brand ramp (§3.2) */
+  --vermilion-50: #fdece7;
+  --vermilion-100: #fbd3c7;
+  --vermilion-300: #f0937a;
+  --vermilion-500: #e8552e;
+  --vermilion-600: #d0421d;
+  --vermilion-700: #ae3315;
+
+  /* MTG identity — pip fill / glyph / solid (§3.4), theme-stable */
+  --wubrg-w-fill: #f7f3d8;
+  --wubrg-w-glyph: #5b5637;
+  --wubrg-w-solid: #e4dca8;
+  --wubrg-u-fill: #2e7dc4;
+  --wubrg-u-glyph: #eaf4fc;
+  --wubrg-u-solid: #2e7dc4;
+  --wubrg-b-fill: #3a3540;
+  --wubrg-b-glyph: #d6d0da;
+  --wubrg-b-solid: #5a5361;
+  --wubrg-r-fill: #d33b2e;
+  --wubrg-r-glyph: #fbe7e2;
+  --wubrg-r-solid: #d33b2e;
+  --wubrg-g-fill: #2e9e5b;
+  --wubrg-g-glyph: #eaf7ef;
+  --wubrg-g-solid: #2e9e5b;
+  --wubrg-c-fill: #b9b4ae;
+  --wubrg-c-glyph: #3a3833;
+  --wubrg-c-solid: #b9b4ae;
+  --wubrg-m-fill: #d9a63a;
+  --wubrg-m-glyph: #3a2f10;
+  --wubrg-m-solid: #d9a63a;
+  --wubrg-land-fill: #b08a5e;
+  --wubrg-land-glyph: #f2eadf;
+  --wubrg-land-solid: #b08a5e;
+
+  /* Spacing scale — 4px base (§6.1) */
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 6px;
+  --space-4: 8px;
+  --space-5: 12px;
+  --space-6: 16px;
+  --space-7: 20px;
+  --space-8: 24px;
+  --space-9: 32px;
+  --space-10: 40px;
+  --space-11: 48px;
+
+  /* Radius (§6.1) */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 999px;
+
+  /* Type families (§4) */
+  --font-display: "Cinzel", Georgia, serif;
+  --font-wordmark: "Sanguine Frost", "Cinzel", serif;
+  --font-body: "Libre Franklin", system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Menlo", monospace;
+
+  /* Motion (§9.1) */
+  --motion-fast: 120ms;
+  --motion-base: 200ms;
+  --motion-slow: 320ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  /* Z layers */
+  --z-rail: 20;
+  --z-overlay: 40;
+  --z-modal: 60;
+  --z-toast: 80;
+}
+
+/* ---- Tier 2: semantic tokens — DARK (default, §3.1 / §10.2) ------------- */
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-canvas: #141416;
+  --color-surface: #1c1c1f;
+  --color-surface-raised: #242428;
+  --color-surface-sunken: #101012;
+  --color-border: #2e2e33;
+  --color-border-strong: #3c3c43;
+  --color-text: #ededef;
+  --color-text-muted: #a0a0a8;
+  --color-text-faint: #6a6a72;
+
+  --color-accent: var(--vermilion-500);
+  --color-accent-hover: var(--vermilion-600);
+  --color-accent-active: var(--vermilion-700);
+  --color-on-accent: #ffffff;
+  --color-accent-tint: rgba(232, 85, 46, 0.14);
+
+  --color-success: #3fb870;
+  --color-warning: #e0a32e;
+  --color-danger: #e5484d;
+  --color-info: #4c8df5;
+  --color-price: #4fb477;
+  --color-success-tint: rgba(63, 184, 112, 0.14);
+  --color-warning-tint: rgba(224, 163, 46, 0.14);
+  --color-danger-tint: rgba(229, 72, 77, 0.14);
+  --color-info-tint: rgba(76, 141, 245, 0.14);
+
+  /* Elevation (§6.1) — dark leans on surface + border, minimal shadow */
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.55);
+  --scrim: rgba(0, 0, 0, 0.5);
+
+  /* Identity tint alpha (dark 14%, §3.4) — solid colors reused from primitives */
+  --identity-tint-alpha: 0.14;
+}
+
+/* ---- Tier 2: semantic tokens — LIGHT (§3.1 / §10.2) --------------------- */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --color-canvas: #f4f2ee;
+  --color-surface: #fbfaf7;
+  --color-surface-raised: #ffffff;
+  --color-surface-sunken: #ece9e3;
+  --color-border: #dedad2;
+  --color-border-strong: #c7c1b6;
+  --color-text: #1e1d1b;
+  --color-text-muted: #5f5c56;
+  --color-text-faint: #928e86;
+
+  --color-accent: var(--vermilion-600);
+  --color-accent-hover: var(--vermilion-700);
+  --color-accent-active: var(--vermilion-700);
+  --color-on-accent: #ffffff;
+  --color-accent-tint: rgba(208, 66, 29, 0.1);
+
+  --color-success: #1e9e57;
+  --color-warning: #b77e12;
+  --color-danger: #ce2c31;
+  --color-info: #2f6fe0;
+  --color-price: #2e9e5b;
+  --color-success-tint: rgba(30, 158, 87, 0.12);
+  --color-warning-tint: rgba(183, 126, 18, 0.12);
+  --color-danger-tint: rgba(206, 44, 49, 0.12);
+  --color-info-tint: rgba(47, 111, 224, 0.12);
+
+  --shadow-md: 0 4px 14px rgba(30, 28, 26, 0.12);
+  --shadow-lg: 0 14px 44px rgba(30, 28, 26, 0.18);
+  --scrim: rgba(30, 28, 26, 0.35);
+
+  --identity-tint-alpha: 0.1;
+}
+
+/* ==========================================================================
+   Base reset + document defaults
+   ========================================================================== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-canvas);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-variant-numeric: tabular-nums;
+  transition: background var(--motion-base) var(--ease-out),
+    color var(--motion-base) var(--ease-out);
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* Visible accent focus ring on every interactive element (§6.1 / §11) */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Type scale utility classes (§4) — used sparingly; components mostly own type */
+.t-display {
+  font-family: var(--font-display);
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 700;
+}
+.t-h1 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 650;
+}
+.t-h2 {
+  font-family: var(--font-display);
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 600;
+}
+.t-label {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.t-caption {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--color-text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
