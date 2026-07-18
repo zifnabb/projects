@@ -454,15 +454,15 @@ Aligns with PLAN §4 (React SPA, Vite+TS, served static by FastAPI) and §17 bui
 - **Default theme = dark**, following `prefers-color-scheme` when no stored pref.
 - **Type (locked):** `Cinzel` display (headings/labels/names) + `Libre Franklin` body & oracle (both OFL, in `brand/`) + Mana font + Keyrune (symbols) + optional mono for syntax/JSON. Inter dropped (too neutral); serif body candidates (Alegreya, Crimson Pro) dropped (lower x-height → read too small in dense UI). No attempt to imitate Beleren.
 - **Wordmark = Sanguine Frost, all-caps** (§2) — locked. Display-only, personal-use license (asset in `brand/`), needs ≥1.35 line-height due to glyph overshoot.
-- **Icons:** Lucide. **Primitives:** Radix (suggested).
-- **Desktop-first**, tablet-graceful, phone best-effort (§6.4).
+- **Icons:** Lucide. **Primitives:** Radix — **confirmed 2026-07-19** (unstyled, skinned with our tokens; charts stay bespoke SVG).
+- **Desktop-first**, tablet-graceful, phone best-effort (§6.4) — **confirmed 2026-07-19** (phone stays out of MVP polish scope; architecture must not preclude it).
 
 **Open items (need a call before/while building the relevant phase):**
 - **Font licensing/self-hosting** — Inter + Mana + Keyrune are open-licensed, self-host fine. **Sanguine Frost (wordmark) is personal-use only** — acceptable for this private tool (resolved), but flagged as the one non-open face: it must be swapped if vermilion ever goes public/commercial.
-- **Radix vs hand-rolled primitives** — accept the Radix suggestion or go fully bespoke? (Radix buys accessibility cheaply.)
+- ~~**Radix vs hand-rolled primitives**~~ — **RESOLVED 2026-07-19: Radix** for behavioral primitives (tabs/dialog/popover/menu/tooltip/toggle), skinned with our tokens; bespoke for all visuals (card, Stacks board, pip bars, charts).
 - **Stacks fan density / row overlap %** — tune against real card counts once the board exists (the reference uses ~72%; verify legibility of the name bar).
 - **Light-theme card-art treatment** — card art is designed for dark frames; on the light theme, confirm the identity tint + border keep cards from "floating." (Lean: a subtle `surface`-colored mat behind full-card images in light theme.)
-- **Phone board layout** (§6.4) — confirm "stacked vertical columns, out of MVP polish scope" is acceptable, or promote to MVP.
+- ~~**Phone board layout**~~ (§6.4) — **RESOLVED 2026-07-19: desktop-first, phone best-effort** (stacked vertical columns, out of MVP polish scope; token/flex system must keep it *possible* to promote later).
 - **Deck-card image source** — commander art crop vs full-card thumbnail for the dashboard tile (lean: art-crop for a cleaner grid).
 - **High-contrast / OLED-black theme** — worth a third `[data-theme]` block post-MVP? (Architecture already supports it.)
 
