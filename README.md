@@ -141,13 +141,13 @@ For most stacks, `docker-compose.yml` is also present (mirrors what Dockge manag
 
 ## Planned Services
 
-Designed but **not yet built or deployed** — ports/subdomains reserved here to avoid collisions. These deliberately stay out of the live Port Map / Subdomains tables and the dashboard config until they actually ship.
+Not yet **publicly shipped** — ports/subdomains reserved here to avoid collisions. These deliberately stay out of the live Port Map / Subdomains tables and the dashboard config until they're reachable via NPM/Cloudflare.
 
 | Service | Stack dir | Port(s) | Subdomain | Auth | Design |
 |---------|-----------|---------|-----------|------|--------|
 | Deckbuilder ("vermilion") | [stacks/deckbuilder/](stacks/deckbuilder/) | 8099 (app), 5436 (PostgreSQL, in `databases`) | `vermilion.cooldad.top` | app's own invite-only login (no Authentik) | [PLAN.md](stacks/deckbuilder/PLAN.md) |
 
-**Deckbuilder** — a private, invite-only, Commander-focused MTG deck builder (Archidekt-style, zero community surface): React SPA + FastAPI + PostgreSQL, custom-build stack (rsync → Dockge → `build: .`). Full 19-section design in [stacks/deckbuilder/PLAN.md](stacks/deckbuilder/PLAN.md); deploy steps in its §18.
+**Deckbuilder** — a private, invite-only, Commander-focused MTG deck builder (Archidekt-style, zero community surface): React SPA + FastAPI + PostgreSQL, custom-build stack (rsync → Dockge → `build: .`). **Build in progress (branch `deckbuilder-build`): Phases 0–4 (scaffold · card data · search · auth · decks) are deployed on the server + verified, but not yet publicly proxied** — so it stays here until the UI (Phase 5) and public deploy (Phase 7) land. Full 19-section design in [stacks/deckbuilder/PLAN.md](stacks/deckbuilder/PLAN.md); deploy steps in its §18.
 
 ## Legacy
 
