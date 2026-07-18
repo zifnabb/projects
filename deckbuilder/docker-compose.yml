@@ -4,8 +4,7 @@ services:
     container_name: deckbuilder
     restart: unless-stopped
     network_mode: host
-    environment:
-      DECKBUILDER_PORT: "8099"
-      ENVIRONMENT: "production"
-    # env_file (.env) is added in Phase 1 once the DB / JWT / admin secrets
-    # are needed. On the server it lives at /root/stacks/deckbuilder/.env.
+    env_file:
+      - .env
+    # .env provides DECKBUILDER_PORT, DATABASE_URL, JWT_SECRET, ADMIN_*, HTTP_USER_AGENT.
+    # See .env.example. On the server it lives at /root/stacks/deckbuilder/.env.

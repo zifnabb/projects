@@ -1,0 +1,25 @@
+"""Async database engine + session (asyncpg). Alembic and the bulk sync use a
+sync psycopg2 engine derived from the same URL (see alembic/env.py, scryfall/bulk.py).
+"""
+
+from collections.abc import AsyncGenerator
+
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase
+
+from app.config import get_settings
+
+settings = get_settings()
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+engine = create_async_engine(settings.database_url, pool_pre_ping=True)
+SessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+
+
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
+    async with SessionLocal() as session:
+        yield session

@@ -16,9 +16,14 @@ WORKDIR /app
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/app ./app
+COPY backend/alembic ./alembic
+COPY backend/alembic.ini ./alembic.ini
+COPY backend/entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
 # Built SPA assets, served by FastAPI as static files.
 COPY --from=frontend /frontend/dist ./static
 
 ENV DECKBUILDER_PORT=8099
 EXPOSE 8099
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${DECKBUILDER_PORT}"]
+# entrypoint runs `alembic upgrade head` then execs uvicorn.
+CMD ["./entrypoint.sh"]
