@@ -18,10 +18,14 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.deps import get_current_admin
+from app.bootstrap import ensure_admin
 from app.config import get_settings
 from app.db import get_session
 from app.http_adapter import aclose as http_aclose
 from app.models import Card, Printing
+from app.routers.admin import router as admin_router
+from app.routers.auth import router as auth_router
 from app.routers.search import router as search_router
 from app.scryfall.bulk import sync_bulk
 
@@ -47,6 +51,7 @@ async def lifespan(app: FastAPI):
     )
     scheduler.start()
     log.info("scheduler started (scryfall nightly sync @ 04:00)")
+    await ensure_admin()
     try:
         yield
     finally:
@@ -72,9 +77,10 @@ async def card_stats(session: AsyncSession = Depends(get_session)) -> dict:
 
 
 @api.post("/sync/scryfall")
-async def trigger_sync(kinds: str = "oracle_cards,default_cards") -> dict:
-    # TODO(Phase 3): gate behind admin auth. Currently only reachable on the
-    # server's localhost (no public proxy route yet).
+async def trigger_sync(
+    kinds: str = "oracle_cards,default_cards",
+    _admin=Depends(get_current_admin),
+) -> dict:
     kind_tuple = tuple(k.strip() for k in kinds.split(",") if k.strip())
     if _sync_lock.locked():
         raise HTTPException(status_code=409, detail="sync already running")
@@ -92,6 +98,8 @@ async def trigger_sync(kinds: str = "oracle_cards,default_cards") -> dict:
 
 
 app.include_router(api)
+app.include_router(auth_router)
+app.include_router(admin_router)
 app.include_router(search_router)
 
 

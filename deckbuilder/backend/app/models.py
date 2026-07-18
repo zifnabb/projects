@@ -5,6 +5,7 @@ table) and `printings` (per-printing, off oracle_id, from the slimmed Default
 Cards sync). Later phases add users / decks / etc. via new Alembic migrations.
 """
 
+import uuid
 from datetime import date, datetime
 
 from sqlalchemy import Boolean, Date, DateTime, Float, Integer, String, Text, func
@@ -12,6 +13,10 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
+
+
+def _uuid() -> str:
+    return str(uuid.uuid4())
 
 
 class Card(Base):
@@ -80,3 +85,46 @@ class ApiCache(Base):
     payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
     fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class User(Base):
+    """Login identity is `username` (email-free by design, PLAN §15 decision)."""
+
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    username: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    password_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    display_name: Mapped[str | None] = mapped_column(String(64))
+    is_admin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    theme_pref: Mapped[str] = mapped_column(String(16), nullable=False, default="dark")
+    token_version: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class Invite(Base):
+    """`code` IS the magic-link token (random urlsafe). Single-use, optional expiry."""
+
+    __tablename__ = "invites"
+
+    code: Mapped[str] = mapped_column(String(64), primary_key=True)
+    created_by: Mapped[str] = mapped_column(String(36), nullable=False)
+    used_by: Mapped[str | None] = mapped_column(String(36))
+    note: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class PasswordReset(Base):
+    """Admin-minted one-time reset link (email-free reset flow, PLAN §15)."""
+
+    __tablename__ = "password_resets"
+
+    token: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
