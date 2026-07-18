@@ -17,7 +17,8 @@ A **private Archidekt/Moxfield-style deck builder** for the user + a few friends
 
 ## 2. Status & open items
 
-- **Plan approved.** Nothing implemented yet.
+- **Plan approved.** Build started 2026-07-18 on branch `deckbuilder-build` (Phases 0–4 first, review before Phase 5/UI).
+- **DECISION (2026-07-18) — login identity is `username`, not email.** The app is already email-free (no mailserver, admin-assisted resets), so email is dropped entirely: `users` uses a unique **`username`** as the login identity; register/login forms take username; the admin panel lists by username; admin bootstraps as **`zifnabb`**. "No user enumeration" and rate-limit rules apply to username. Wherever §6/§15 below say "email" as the identifier, read **username**. (A polite contact email may still appear in the outbound HTTP `User-Agent` for third-party APIs — unrelated to login.)
 - **BLOCKER (post-MVP only):** send a courtesy email to the **commandersalt.com dev** before shipping the grading link-out (attribution + backlink offered in return). *(Same blocker gates the EDH Salt Score row on the card-detail More Info tab, §9.)*
 - **SOFT BLOCKER (MVP import):** **Moxfield URL-import** is access-sensitive (their API enforces UA rules / has restricted third-party use) — do a courtesy-check before shipping *Moxfield* URL pull (§13). Archidekt URL-import (the primary migration path) and paste/upload import are unaffected.
 - **Verify before deploy:** ports **8099** (app) and **5436** (Postgres) are still free — check the port map in [../../README.md](../../README.md). Subdomain `vermilion` confirmed unused at planning time.
