@@ -49,8 +49,14 @@ export function RegisterPage() {
 
   const inviteValid = invite.length > 0 && inviteQuery.data?.valid === true;
 
-  // No token, or a checked-and-invalid token → the friendly dead end.
-  if (!invite || (inviteQuery.isFetched && !inviteQuery.data?.valid)) {
+  // No token in the URL → let the user paste the invite code they were given
+  // (the magic link is the same code; either path works).
+  if (!invite) {
+    return <InviteCodeEntry />;
+  }
+
+  // A checked-and-invalid token → the friendly dead end.
+  if (inviteQuery.isFetched && !inviteQuery.data?.valid) {
     return (
       <AuthLayout title="Register">
         <p className={styles.notice}>
@@ -58,6 +64,8 @@ export function RegisterPage() {
           admin for a fresh invite link.
         </p>
         <div className={styles.footer}>
+          <Link to="/register">Try another code</Link>
+          <span aria-hidden="true">&nbsp;·&nbsp;</span>
           <Link to="/login">Back to sign in</Link>
         </div>
       </AuthLayout>
@@ -132,6 +140,55 @@ export function RegisterPage() {
       </form>
       <div className={styles.footer}>
         Already registered?&nbsp;<Link to="/login">Sign in</Link>
+      </div>
+    </AuthLayout>
+  );
+}
+
+/** /register with no token: paste the invite code (or full link) you were given. */
+function InviteCodeEntry() {
+  const navigate = useNavigate();
+  const [code, setCode] = useState("");
+
+  function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    let value = code.trim();
+    // Accept a pasted full magic link as well as the bare code.
+    try {
+      const url = new URL(value);
+      value = url.searchParams.get("invite") ?? value;
+    } catch {
+      /* not a URL — treat as a bare code */
+    }
+    if (value) navigate(`/register?invite=${encodeURIComponent(value)}`);
+  }
+
+  return (
+    <AuthLayout
+      title="Register"
+      subtitle="Registration is invite-only. Paste the invite code or link you were given."
+    >
+      <form className={styles.form} onSubmit={onSubmit} noValidate>
+        <TextField
+          label="Invite code"
+          autoFocus
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          placeholder="code or full invite link"
+          required
+        />
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          fullWidth
+          disabled={!code.trim()}
+        >
+          Continue
+        </Button>
+      </form>
+      <div className={styles.footer}>
+        <Link to="/login">Back to sign in</Link>
       </div>
     </AuthLayout>
   );
