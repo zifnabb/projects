@@ -1,0 +1,2 @@
+Cinzel — SIL Open Font License 1.1 (OFL). Free for commercial + personal use, self-hostable.
+Source: Google Fonts / github.com/google/fonts ofl/cinzel
