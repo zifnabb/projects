@@ -128,6 +128,12 @@ For services that build locally (like lavender-dashboard and mcp-server):
 - Always use timeouts and non-interactive flags (`-o BatchMode=yes`, `timeout`) for safety.
 - Combine with `sudo` when operating on stacks (LavenderTown). Direct user access on terrenceb-dl for its mounts.
 
+## Planned Services (designed, not built)
+
+- **Deckbuilder ("vermilion")** — private, invite-only, Commander-focused MTG deck builder (Archidekt-style, no community surface). React SPA (Vite+TS) + FastAPI + PostgreSQL, single multi-stage image, custom-build stack like `lavender-dashboard`/`mcp`. **Designed but not deployed.** Reserves **port 8099** (app) / **5436** (Postgres in the `databases` stack) and subdomain **`vermilion.cooldad.top`** (public, app's own invite-only login, **no Authentik**).
+  - Canonical design + decisions/research: **`stacks/deckbuilder/PLAN.md`** (19 sections). Stack stub: `stacks/deckbuilder/README.md`.
+  - **Deploy-time doc updates (do NOT do before it ships, per PLAN §18):** add `deckbuilder-postgres` to the `databases` stack; rsync → Dockge `build: .`; NPM host + Cloudflare Tunnel route; then move it from "Planned Services" into the root README port map/subdomains tables and add `STACKS`/`SUBDOMAINS` entries in `lavender-dashboard/app/config.py`. Adding the dashboard config early would render a phantom, unreachable service.
+
 ## General Lessons & Gotchas
 - Cloudflared is single point of failure for all remote access.
 - For Authentik restarts: never restart the whole bigstackd stack — target only server + worker.

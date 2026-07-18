@@ -139,6 +139,16 @@ Each stack directory contains:
 
 For most stacks, `docker-compose.yml` is also present (mirrors what Dockge manages). For custom-built images (lavender-dashboard, mcp), the build context (Dockerfile + source) lives in a sibling directory at the repo root; a reference compose may be synced into the stack dir for Dockge builds using `build: .`.
 
+## Planned Services
+
+Designed but **not yet built or deployed** — ports/subdomains reserved here to avoid collisions. These deliberately stay out of the live Port Map / Subdomains tables and the dashboard config until they actually ship.
+
+| Service | Stack dir | Port(s) | Subdomain | Auth | Design |
+|---------|-----------|---------|-----------|------|--------|
+| Deckbuilder ("vermilion") | [stacks/deckbuilder/](stacks/deckbuilder/) | 8099 (app), 5436 (PostgreSQL, in `databases`) | `vermilion.cooldad.top` | app's own invite-only login (no Authentik) | [PLAN.md](stacks/deckbuilder/PLAN.md) |
+
+**Deckbuilder** — a private, invite-only, Commander-focused MTG deck builder (Archidekt-style, zero community surface): React SPA + FastAPI + PostgreSQL, custom-build stack (rsync → Dockge → `build: .`). Full 19-section design in [stacks/deckbuilder/PLAN.md](stacks/deckbuilder/PLAN.md); deploy steps in its §18.
+
 ## Legacy
 
 The `bkstacker` stack on the server is the original monolith that all current stacks were split from. Its named volumes are still referenced as external volumes by the `infra` and `media` stacks. The `authentik` stack directory on the server appears to be an earlier standalone attempt and is superseded by the `bigstackd` and `databases` configurations.
