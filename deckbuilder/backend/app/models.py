@@ -63,3 +63,20 @@ class Printing(Base):
     artist: Mapped[str | None] = mapped_column(Text)
     lang: Mapped[str] = mapped_column(String(8), nullable=False, default="en")
     prices: Mapped[dict | None] = mapped_column(JSONB)  # reserved until pricing ships
+
+
+class ApiCache(Base):
+    """Shared outbound-HTTP adapter cache (Scryfall search/rulings, later EDHREC etc.).
+
+    Keyed by (provider, key_hash) where key_hash is a sha256 of the logical
+    request key, so arbitrarily long queries stay within btree index limits.
+    """
+
+    __tablename__ = "api_cache"
+
+    provider: Mapped[str] = mapped_column(String(32), primary_key=True)
+    key_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    key_repr: Mapped[str | None] = mapped_column(Text)  # human-readable, not indexed
+    payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

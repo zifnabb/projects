@@ -20,7 +20,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
 from app.db import get_session
+from app.http_adapter import aclose as http_aclose
 from app.models import Card, Printing
+from app.routers.search import router as search_router
 from app.scryfall.bulk import sync_bulk
 
 logging.basicConfig(level=logging.INFO)
@@ -49,6 +51,7 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         scheduler.shutdown(wait=False)
+        await http_aclose()
 
 
 app = FastAPI(title="vermilion — deckbuilder API", lifespan=lifespan)
@@ -89,6 +92,7 @@ async def trigger_sync(kinds: str = "oracle_cards,default_cards") -> dict:
 
 
 app.include_router(api)
+app.include_router(search_router)
 
 
 # --- Serve the built SPA (present in the image; absent during bare backend dev) ---
@@ -99,6 +103,9 @@ if (STATIC_DIR / "index.html").is_file():
 
     @app.get("/{full_path:path}")
     async def spa(full_path: str) -> FileResponse:
+        # Never let unmatched API paths fall through to the SPA — 404 them.
+        if full_path.startswith("api/") or full_path == "api":
+            raise HTTPException(status_code=404, detail="not found")
         candidate = STATIC_DIR / full_path
         if full_path and candidate.is_file():
             return FileResponse(candidate)
