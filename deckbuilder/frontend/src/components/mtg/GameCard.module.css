@@ -36,12 +36,13 @@
   color: var(--color-text-muted);
 }
 
-/* Game Changer badge — an on-card chip in the top-right, just under the mana
-   pips (inset, all corners rounded, like the qty badge) so it reads as part of
-   the card, never covers the title, and sits within the Stacks fan strip. */
+/* Game Changer badge + flip button stack on the right edge, BELOW the mana
+   pips. Placed low enough that the Stacks fan overlap tucks them away at rest
+   (only the card title strip shows) and reveals them when the card expands on
+   hover/focus. In Grid/List (no overlap) they're always visible. */
 .gameChanger {
   position: absolute;
-  top: 6%;
+  top: 10.5%;
   right: 3%;
   display: inline-flex;
   align-items: center;
@@ -58,10 +59,12 @@
   z-index: 2;
 }
 
-/* Flip button for double-faced cards */
+/* Flip button for double-faced cards — stacked under the GC badge on the right,
+   below the mana pips (tucked in the fan, revealed on hover/focus). Its top
+   nudges up to 10.5% when there's no GC badge above it (set inline). */
 .flipButton {
   position: absolute;
-  top: 4%;
+  top: 19.5%;
   right: 3%;
   width: 24px;
   height: 24px;

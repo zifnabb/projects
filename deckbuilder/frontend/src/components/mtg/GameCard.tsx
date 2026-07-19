@@ -68,6 +68,8 @@ export function GameCard({
         <button
           type="button"
           className={styles.flipButton}
+          // sit in the GC slot when there's no GC badge stacked above
+          style={card.game_changer ? undefined : { top: "10.5%" }}
           title={`Flip to ${card.faces![face === 0 ? 1 : 0].name ?? "other face"}`}
           aria-label="Flip card"
           onClick={(e) => {
