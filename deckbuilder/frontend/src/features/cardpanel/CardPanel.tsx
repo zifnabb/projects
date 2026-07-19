@@ -302,26 +302,50 @@ export function CardPanel({
               </Tabs.List>
 
               <Tabs.Content value="info" className={styles.tabContent}>
-                {detail && (
-                  <>
-                    <div className={styles.nameRow}>
-                      <h3 className={styles.cardName}>{detail.name}</h3>
-                      <ManaCost cost={detail.mana_cost} />
-                    </div>
-                    <div className={styles.typeLine}>
-                      <span>{detail.type_line}</span>
-                      <span>
-                        {detail.power != null && detail.toughness != null
-                          ? `${detail.power}/${detail.toughness}`
-                          : detail.loyalty != null
-                            ? `Loyalty ${detail.loyalty}`
-                            : ""}
-                      </span>
-                    </div>
-                    <div className={styles.hairline} />
-                    <OracleText text={detail.oracle_text} />
-                  </>
-                )}
+                {detail &&
+                  (detail.faces && detail.faces.length >= 2 ? (
+                    // double-faced: one block per face (top-level text is null)
+                    detail.faces.map((f, i) => (
+                      <div key={i}>
+                        {i > 0 && <div className={styles.faceDivider} />}
+                        <div className={styles.nameRow}>
+                          <h3 className={styles.cardName}>{f.name}</h3>
+                          <ManaCost cost={f.mana_cost} />
+                        </div>
+                        <div className={styles.typeLine}>
+                          <span>{f.type_line}</span>
+                          <span>
+                            {f.power != null && f.toughness != null
+                              ? `${f.power}/${f.toughness}`
+                              : f.loyalty != null
+                                ? `Loyalty ${f.loyalty}`
+                                : ""}
+                          </span>
+                        </div>
+                        <div className={styles.hairline} />
+                        <OracleText text={f.oracle_text} />
+                      </div>
+                    ))
+                  ) : (
+                    <>
+                      <div className={styles.nameRow}>
+                        <h3 className={styles.cardName}>{detail.name}</h3>
+                        <ManaCost cost={detail.mana_cost} />
+                      </div>
+                      <div className={styles.typeLine}>
+                        <span>{detail.type_line}</span>
+                        <span>
+                          {detail.power != null && detail.toughness != null
+                            ? `${detail.power}/${detail.toughness}`
+                            : detail.loyalty != null
+                              ? `Loyalty ${detail.loyalty}`
+                              : ""}
+                        </span>
+                      </div>
+                      <div className={styles.hairline} />
+                      <OracleText text={detail.oracle_text} />
+                    </>
+                  ))}
               </Tabs.Content>
 
               <Tabs.Content value="more" className={styles.tabContent}>

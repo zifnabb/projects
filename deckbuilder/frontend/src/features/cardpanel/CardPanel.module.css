@@ -122,6 +122,12 @@
   height: 1px;
   background: var(--color-border);
 }
+/* separates the two sides of a double-faced card in Card Info */
+.faceDivider {
+  height: 1px;
+  margin: var(--space-5) 0;
+  background: var(--color-border-strong);
+}
 
 /* deck controls */
 .controls {

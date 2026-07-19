@@ -14,6 +14,17 @@ export interface PrintingOut {
   image: Record<string, string>;
 }
 
+export interface CardDetailFace {
+  name: string | null;
+  mana_cost: string | null;
+  type_line: string | null;
+  oracle_text: string | null;
+  power: string | null;
+  toughness: string | null;
+  loyalty: string | null;
+  image: Record<string, string>;
+}
+
 export interface CardDetail {
   oracle_id: string;
   name: string;
@@ -32,6 +43,8 @@ export interface CardDetail {
   image: Record<string, string>;
   reserved: boolean;
   layout: string | null;
+  /** double-faced cards: per-face rules text (top-level oracle_text is null) */
+  faces?: CardDetailFace[] | null;
   default_printing_id: string | null;
   printings: PrintingOut[];
 }

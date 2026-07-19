@@ -222,6 +222,22 @@ async def card_detail(session: AsyncSession, oracle_id: str) -> dict | None:
     detail["prices"] = card.prices
     detail["reserved"] = card.reserved
     detail["layout"] = card.layout
+    # double-faced cards: top-level oracle_text/mana_cost are null — expose the
+    # per-face rules text/type/image so the panel can render both sides.
+    if card.card_faces and len(card.card_faces) >= 2:
+        detail["faces"] = [
+            {
+                "name": f.get("name"),
+                "mana_cost": f.get("mana_cost"),
+                "type_line": f.get("type_line"),
+                "oracle_text": f.get("oracle_text"),
+                "power": f.get("power"),
+                "toughness": f.get("toughness"),
+                "loyalty": f.get("loyalty"),
+                "image": f.get("image_uris") or {},
+            }
+            for f in card.card_faces
+        ]
     detail["default_printing_id"] = card.default_printing_id
     detail["printings"] = [
         {
