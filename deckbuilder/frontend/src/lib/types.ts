@@ -76,7 +76,7 @@ export interface DeckCategoryOut {
 export interface CardSummary {
   name?: string;
   mana_cost?: string | null;
-  cmc?: number;
+  cmc?: number | null;
   type_line?: string | null;
   color_identity?: ColorLetter[];
   image?: Record<string, string>;

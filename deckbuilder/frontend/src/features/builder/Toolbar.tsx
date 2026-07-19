@@ -4,6 +4,8 @@
  * slice. View/group/sort live in URL params (shareable, survives reload).
  */
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { Search } from "lucide-react";
+import { Button } from "../../components/ui/Button";
 import { ManaCost } from "../../components/mtg/ManaCost";
 import type { AutocompleteResult } from "../../lib/types";
 import { useAutocomplete } from "../decks/api";
@@ -105,22 +107,38 @@ export function Toolbar({
   group,
   sort,
   hasCategories,
+  searchOpen,
   onView,
   onGroup,
   onSort,
   onAdd,
+  onToggleSearch,
 }: {
   view: ViewAs;
   group: GroupBy;
   sort: SortBy;
   hasCategories: boolean;
+  searchOpen: boolean;
   onView: (v: ViewAs) => void;
   onGroup: (g: GroupBy) => void;
   onSort: (s: SortBy) => void;
   onAdd: (card: AutocompleteResult) => void;
+  onToggleSearch: () => void;
 }) {
   return (
     <div className={styles.toolbar}>
+      <div className={styles.group}>
+        <span className={styles.groupLabel}>Search</span>
+        <Button
+          variant={searchOpen ? "secondary" : "primary"}
+          size="sm"
+          onClick={onToggleSearch}
+        >
+          <Search size={14} aria-hidden="true" />
+          Card search
+        </Button>
+      </div>
+
       <div className={styles.group}>
         <span className={styles.groupLabel}>Add card</span>
         <QuickAdd onAdd={onAdd} />

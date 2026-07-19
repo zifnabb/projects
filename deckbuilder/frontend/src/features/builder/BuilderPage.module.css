@@ -1,3 +1,13 @@
+/* Board + collapsible right rail (DESIGN §6.2-B) */
+.workspace {
+  display: flex;
+  align-items: flex-start;
+}
+.boardArea {
+  flex: 1;
+  min-width: 0; /* lets the stacks board scroll instead of overflowing */
+}
+
 .loading {
   padding: 0;
 }

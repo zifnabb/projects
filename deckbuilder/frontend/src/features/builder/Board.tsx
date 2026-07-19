@@ -50,19 +50,8 @@ function RowMenu({
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
         <DropdownMenu.Content className={styles.menuContent} sideOffset={6}>
-          <div className={styles.menuLabel}>Board</div>
-          {BOARD_TARGETS.filter((b) => b.key !== row.board).map((b) => (
-            <DropdownMenu.Item
-              key={b.key}
-              className={styles.menuItem}
-              onSelect={() => actions.moveBoard(row, b.key)}
-            >
-              {b.label}
-            </DropdownMenu.Item>
-          ))}
           {deck.categories.length > 0 && (
             <>
-              <div className={styles.menuSep} />
               <div className={styles.menuLabel}>Category</div>
               {deck.categories.map((cat) => (
                 <DropdownMenu.Item
@@ -82,8 +71,19 @@ function RowMenu({
               >
                 Uncategorized
               </DropdownMenu.Item>
+              <div className={styles.menuSep} />
             </>
           )}
+          <div className={styles.menuLabel}>Board</div>
+          {BOARD_TARGETS.filter((b) => b.key !== row.board).map((b) => (
+            <DropdownMenu.Item
+              key={b.key}
+              className={styles.menuItem}
+              onSelect={() => actions.moveBoard(row, b.key)}
+            >
+              {b.label}
+            </DropdownMenu.Item>
+          ))}
           <div className={styles.menuSep} />
           <DropdownMenu.Item
             className={`${styles.menuItem} ${styles.menuDanger}`}

@@ -5,8 +5,9 @@
  */
 import { useSearchParams } from "react-router-dom";
 import { useParams } from "react-router-dom";
-import type { AutocompleteResult, DeckCardRow } from "../../lib/types";
+import type { DeckCardRow } from "../../lib/types";
 import { decksApi, useDeck, useDeckMutation } from "../decks/api";
+import { SearchPanel } from "../search/SearchPanel";
 import { Board, type CardActions } from "./Board";
 import { DeckHeader } from "./DeckHeader";
 import { Toolbar } from "./Toolbar";
@@ -27,7 +28,7 @@ export function BuilderPage() {
   const rename = useDeckMutation(deckId!, (name: string) =>
     decksApi.update(deckId!, { name }),
   );
-  const addCard = useDeckMutation(deckId!, (card: AutocompleteResult) =>
+  const addCard = useDeckMutation(deckId!, (card: { oracle_id: string }) =>
     decksApi.addCard(deckId!, { oracle_id: card.oracle_id }),
   );
   const updateCard = useDeckMutation(
@@ -53,6 +54,7 @@ export function BuilderPage() {
   }
 
   const hasCategories = deck.categories.length > 0;
+  const searchOpen = params.get("search") === "1";
   const view = (params.get("view") as ViewAs) || "stacks";
   const groupParam = params.get("group") as GroupBy | null;
   const group: GroupBy =
@@ -92,12 +94,25 @@ export function BuilderPage() {
         group={group}
         sort={sort}
         hasCategories={hasCategories}
+        searchOpen={searchOpen}
         onView={(v) => setParam("view", v)}
         onGroup={(g) => setParam("group", g)}
         onSort={(s) => setParam("sort", s)}
         onAdd={(card) => addCard.mutate(card)}
+        onToggleSearch={() => setParam("search", searchOpen ? "0" : "1")}
       />
-      <Board deck={deck} columns={columns} view={view} actions={actions} />
+      <div className={styles.workspace}>
+        <main className={styles.boardArea}>
+          <Board deck={deck} columns={columns} view={view} actions={actions} />
+        </main>
+        {searchOpen && (
+          <SearchPanel
+            deck={deck}
+            onClose={() => setParam("search", "0")}
+            onAdd={(card) => addCard.mutate(card)}
+          />
+        )}
+      </div>
     </div>
   );
 }
