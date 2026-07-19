@@ -23,6 +23,7 @@ A **private Archidekt/Moxfield-style deck builder** for the user + a few friends
 - **SOFT BLOCKER (MVP import):** **Moxfield URL-import** is access-sensitive (their API enforces UA rules / has restricted third-party use) — do a courtesy-check before shipping *Moxfield* URL pull (§13). Archidekt URL-import (the primary migration path) and paste/upload import are unaffected.
 - **Verify before deploy:** ports **8099** (app) and **5436** (Postgres) are still free — check the port map in [../../README.md](../../README.md). Subdomain `vermilion` confirmed unused at planning time.
 - **Deferred decisions:** whether to add Redis (currently: Postgres-backed caches are enough); whether "shared" decks get a discovery feed (currently: explicit per-deck share links only, no feed); scope of the **Default Cards (all-printings) sync** — pulled into MVP for the card-detail printing selector (§9), kept slim (printing rows only, prices reserved).
+- **QUEUED (feedback phase, 2026-07-19): Stats sidebar v2** — view-switcher rail (Condensed / Colors / Mana Curve / Probability / Quantities) + pin/unpin + Cost&Production options menu; full spec in §11 "Stats sidebar". First up in the post-launch feedback queue, ahead of the §16 roadmap items.
 
 ---
 
@@ -337,7 +338,17 @@ The **core workspace** — where Search (§8), the card detail panel (§9), boar
 
 **Boards vs categories** — orthogonal: **board** (`main/side/maybe/command`) is *where* a card lives; **category** is *how the main board is grouped into columns*. Command zone **optional even with a commander** *(Archidekt)*. Add from Search via drag or Quick-add; quantity steppers on each card; click a card → **card detail panel (§9)**.
 
-**Stats sidebar** *(Archidekt, collapsible/pinnable rail)* — mana curve · avg + total mana value · type counts · category counts (vs target) · **Color Cost & Production** (from `mana_cost` + `produced_mana`, §5 — "free" because the bulk sync carries `produced_mana`). All computed **locally**, no external calls.
+**Stats sidebar** *(Archidekt, collapsible/pinnable rail)* — all computed **locally**, no external calls.
+
+- **v1 (shipped with MVP):** mana curve · avg + total mana value · type counts · category counts (vs target) · **Color Cost & Production** (from `mana_cost` + `produced_mana`, §5 — "free" because the bulk sync carries `produced_mana`).
+- **v2 (user request 2026-07-19, Archidekt reference screenshots): the rail becomes a *view-switcher*** — a dropdown at the top selects one of five views, plus a **Pin/Unpin** toggle (pinned = docked rail as today; unpinned = floating overlay the board flows under):
+  1. **Condensed** (default — v1's layout, kept): curve · MV · type counts · category counts · compact Color Cost & Production rows (`{pip} Cost 100% ▓▓▓` / `{pip} Prod 92% ▓▓`), with a **⋯ options menu**: ☐ show out-of-identity colors · ☐ use lands only for production · ☐ show as pie chart · ☐ include colorless in pie chart.
+  2. **Colors** (expanded Cost & Production): top summary **Cost** and **Production** bars segmented by color (pip glyphs inside the segments); then a block per color — Cost bar with % + "*N* pips · *M* cards", Production bar with % + "*N* mana · *M* cards" — colorless included, out-of-identity colors behind the same ⋯ toggle. Pie mode swaps bars for a conic-gradient pie (pure CSS, no chart lib).
+  3. **Mana Curve** — v1's curve at full height (per-MV bars, avg/total MV).
+  4. **Probability** — hypergeometric draw calculator: "*Probability of drawing* [**At least** | Exactly] [n ±] *card(s) by* [Card Name | **Categories** | Types | Sub Types | Mana Value | Keywords] *having drawn* [7 ±] *card(s)*" → table of every group in that dimension: name · Qty · **Odds %**. Pure math client-side (hypergeometric CDF over deck size = main+command); default n=1, draws=7 (opening hand).
+  5. **Quantities** — "*Quantity of* [Categories | Types | Sub Types | Super Types | Mana Value | Keywords]" → horizontal bar chart, qty label per row.
+  - **Grouping dimensions** (shared by Probability + Quantities): Card Name (Probability only) · Categories (`deck_categories`) · Types / Sub Types / Super Types (parsed from `type_line`: super = Basic/Legendary/Snow/World; sub = after the "—") · Mana Value (0…7+) · Keywords (needs `keywords` added to the deck-card summary — synced already, not yet serialized).
+  - View choice + option toggles persist in **localStorage** (per-browser; per-user server pref only if it ever matters).
 
 **Empty state** — Scryfall's clean layout + "How does this work?" help + first-run coach-marks *(Archidekt)* (open Search · set commander · view controls). *With the template toggle ON a new deck isn't blank — it shows the labelled skeleton columns, and coach-marks point at filling them.*
 
