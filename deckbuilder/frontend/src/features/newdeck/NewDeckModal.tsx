@@ -44,7 +44,6 @@ export function NewDeckModal({
   const [legalOnly, setLegalOnly] = useState(true);
   const [useTemplate, setUseTemplate] = useState(true);
   const [visibility, setVisibility] = useState<"private" | "shared">("private");
-  const [description, setDescription] = useState("");
   const nameTouched = useRef(false);
 
   // Random-name suggestion: fetched on open, re-rolled via the dice.
@@ -75,7 +74,6 @@ export function NewDeckModal({
         commander_oracle_id: commander?.oracle_id,
         use_template: !!template && useTemplate,
         visibility,
-        description: description.trim() || undefined,
       }),
     onSuccess: (deck) => {
       qc.invalidateQueries({ queryKey: ["decks"] });
@@ -93,7 +91,6 @@ export function NewDeckModal({
     setLegalOnly(true);
     setUseTemplate(true);
     setVisibility("private");
-    setDescription("");
     nameTouched.current = false;
   }
 
@@ -275,7 +272,8 @@ export function NewDeckModal({
               </div>
             )}
 
-            {/* Extra Options — collapsed by default (Archidekt) */}
+            {/* Extra Options — collapsed by default (Archidekt); description
+                is deliberately absent (it's an inline edit on the deck page) */}
             <details className={styles.extra}>
               <summary className={styles.extraSummary}>
                 <ChevronRight size={14} aria-hidden="true" />
@@ -297,18 +295,6 @@ export function NewDeckModal({
                     <option value="private">Private (only you)</option>
                     <option value="shared">Shared (read-only link)</option>
                   </select>
-                </div>
-                <div>
-                  <label className={styles.fieldLabel} htmlFor="nd-description">
-                    Description
-                  </label>
-                  <textarea
-                    id="nd-description"
-                    className={styles.textarea}
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="What is this deck trying to do?"
-                  />
                 </div>
               </div>
             </details>

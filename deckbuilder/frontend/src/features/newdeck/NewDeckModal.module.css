@@ -200,8 +200,9 @@
 }
 .toggleHint {
   font-size: 12px;
+  line-height: 17px;
   color: var(--color-text-faint);
-  margin: calc(-1 * var(--space-3)) 0 0 46px;
+  margin: var(--space-3) 0 0 46px;
 }
 
 /* Radix Switch skin (accent track when on, §7.2) */
@@ -251,23 +252,17 @@
 .extraSummary::-webkit-details-marker {
   display: none;
 }
+.extraSummary svg {
+  transition: transform var(--motion-fast) var(--ease-out);
+}
+.extra[open] .extraSummary svg {
+  transform: rotate(90deg);
+}
 .extraBody {
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
   padding-top: var(--space-5);
-}
-
-.textarea {
-  min-height: 64px;
-  padding: var(--space-4) var(--space-5);
-  background: var(--color-surface-sunken);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  color: var(--color-text);
-  font-family: var(--font-body);
-  font-size: 14px;
-  resize: vertical;
 }
 
 .footer {
