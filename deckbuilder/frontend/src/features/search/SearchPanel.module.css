@@ -65,6 +65,24 @@
   border-bottom-color: var(--color-accent);
 }
 
+/* tab content column — the [hidden] rule matters: inline display styles
+   would override Radix's hidden attribute and leave empty flex-1 spacers */
+.tabContent {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.tabContent[hidden] {
+  display: none;
+}
+.tabsRoot {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 .tabBody {
   display: flex;
   flex-direction: column;

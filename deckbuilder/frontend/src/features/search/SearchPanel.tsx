@@ -1,8 +1,9 @@
 /**
- * Search panel (PLAN §8 / DESIGN §8.6) — the extensible tab-shell. MVP tabs:
- * Standard (box + quick filters), Advanced (form → compiled Scryfall syntax,
- * shown live as a teaching strip), Syntax (raw query). Results are GameCards
- * with a hover +Add; color-identity/legality aware via the deck context.
+ * Search panel (PLAN §8 / DESIGN §8.6) — the extensible tab-shell. Two tabs:
+ * Search (one merged form → compiled Scryfall syntax shown live as a teaching
+ * strip) and Syntax (raw query). The form arrives prefilled from the deck
+ * context — commander identity (at-most) + format legality — so results are
+ * deck-legal by default; clear the fields to search wider.
  */
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import * as Tabs from "@radix-ui/react-tabs";
@@ -96,17 +97,6 @@ function Results({
 }
 
 const CMP_OPS = ["=", "!=", ">", "<", ">=", "<="];
-const TYPE_OPTIONS = [
-  "",
-  "creature",
-  "instant",
-  "sorcery",
-  "artifact",
-  "enchantment",
-  "planeswalker",
-  "land",
-  "battle",
-];
 
 export function SearchPanel({
   deck,
@@ -119,24 +109,15 @@ export function SearchPanel({
 }) {
   const identity = deck.color_identity.join("").toLowerCase();
 
-  /* ---- Standard tab ---- */
-  const [stdText, setStdText] = useState("");
-  const [stdType, setStdType] = useState("");
-  const [myColors, setMyColors] = useState(true);
-  const [legalOnly, setLegalOnly] = useState(true);
-  const [stdQuery, setStdQuery] = useState("");
-
-  function runStandard(e: FormEvent) {
-    e.preventDefault();
-    const parts = [stdText.trim()];
-    if (stdType) parts.push(`t:${stdType}`);
-    if (myColors && identity) parts.push(`id<=${identity}`);
-    if (legalOnly && deck.format === "commander") parts.push("legal:commander");
-    setStdQuery(parts.filter(Boolean).join(" "));
-  }
-
-  /* ---- Advanced tab ---- */
-  const [adv, setAdv] = useState<AdvancedFilters>({});
+  /* ---- Search tab (merged form, prefilled from deck context) ---- */
+  const [adv, setAdv] = useState<AdvancedFilters>(() => {
+    const initial: AdvancedFilters = {};
+    if (identity) {
+      initial.color_identity = { colors: identity, mode: "at-most" };
+    }
+    if (deck.format === "commander") initial.format = "commander";
+    return initial;
+  });
   const [advQuery, setAdvQuery] = useState("");
   const debouncedAdv = useDebouncedValue(adv);
   const hasAdvInput = useMemo(
@@ -166,7 +147,7 @@ export function SearchPanel({
     });
   }
 
-  function runAdvanced(e: FormEvent) {
+  function runSearch(e: FormEvent) {
     e.preventDefault();
     if (compiledQuery) setAdvQuery(compiledQuery);
   }
@@ -194,78 +175,19 @@ export function SearchPanel({
         </button>
       </div>
 
-      <Tabs.Root defaultValue="standard" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+      <Tabs.Root defaultValue="search" className={styles.tabsRoot}>
         <Tabs.List className={styles.tabList} aria-label="Search mode">
-          <Tabs.Trigger className={styles.tab} value="standard">
-            Standard
-          </Tabs.Trigger>
-          <Tabs.Trigger className={styles.tab} value="advanced">
-            Advanced
+          <Tabs.Trigger className={styles.tab} value="search">
+            Search
           </Tabs.Trigger>
           <Tabs.Trigger className={styles.tab} value="syntax">
             Syntax
           </Tabs.Trigger>
         </Tabs.List>
 
-        {/* Standard */}
-        <Tabs.Content value="standard" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
-          <form className={styles.tabBody} onSubmit={runStandard}>
-            <input
-              className={styles.input}
-              placeholder="Search cards…"
-              value={stdText}
-              onChange={(e) => setStdText(e.target.value)}
-              aria-label="Search text"
-            />
-            <div className={styles.row}>
-              <div>
-                <label className={styles.fieldLabel}>Type</label>
-                <select
-                  className={styles.select}
-                  style={{ width: "100%" }}
-                  value={stdType}
-                  onChange={(e) => setStdType(e.target.value)}
-                >
-                  {TYPE_OPTIONS.map((t) => (
-                    <option key={t} value={t}>
-                      {t ? t[0].toUpperCase() + t.slice(1) : "Any type"}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            {identity && (
-              <label className={styles.checkboxRow}>
-                <input
-                  type="checkbox"
-                  checked={myColors}
-                  onChange={(e) => setMyColors(e.target.checked)}
-                />
-                My colors only ({deck.color_identity.join("")})
-              </label>
-            )}
-            {deck.format === "commander" && (
-              <label className={styles.checkboxRow}>
-                <input
-                  type="checkbox"
-                  checked={legalOnly}
-                  onChange={(e) => setLegalOnly(e.target.checked)}
-                />
-                Legal cards only
-              </label>
-            )}
-            <Button type="submit" variant="primary" size="sm">
-              Search
-            </Button>
-          </form>
-          <div className={styles.results}>
-            <Results query={stdQuery} onAdd={onAdd} />
-          </div>
-        </Tabs.Content>
-
-        {/* Advanced */}
-        <Tabs.Content value="advanced" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
-          <form className={styles.tabBody} onSubmit={runAdvanced}>
+        {/* Search — merged form */}
+        <Tabs.Content value="search" className={styles.tabContent}>
+          <form className={styles.tabBody} onSubmit={runSearch}>
             <div className={styles.row}>
               <input
                 className={styles.input}
@@ -293,7 +215,7 @@ export function SearchPanel({
                 <label className={styles.fieldLabel}>Identity (e.g. wub)</label>
                 <input
                   className={styles.input}
-                  placeholder={identity || "colors"}
+                  placeholder="any colors"
                   value={adv.color_identity?.colors ?? ""}
                   onChange={(e) =>
                     setAdvField(
@@ -385,9 +307,7 @@ export function SearchPanel({
               <div className={styles.syntaxNote}>
                 We auto-convert this form to Scryfall syntax:
               </div>
-              <div className={styles.syntaxPreview}>
-                {compiledQuery || "—"}
-              </div>
+              <div className={styles.syntaxPreview}>{compiledQuery || "—"}</div>
             </div>
             <Button type="submit" variant="primary" size="sm" disabled={!compiledQuery}>
               Search
@@ -399,7 +319,7 @@ export function SearchPanel({
         </Tabs.Content>
 
         {/* Syntax */}
-        <Tabs.Content value="syntax" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+        <Tabs.Content value="syntax" className={styles.tabContent}>
           <form className={styles.tabBody} onSubmit={runSyntax}>
             <input
               className={styles.input}
