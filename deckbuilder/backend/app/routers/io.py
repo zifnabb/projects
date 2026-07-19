@@ -281,7 +281,7 @@ async def _parse_archidekt(url: str) -> tuple[list[ParsedLine], dict]:
         data = await fetch_json("archidekt", api_url, ttl=300)
     except ThirdPartyError:
         raise HTTPException(
-            status_code=502,
+            status_code=422,
             detail="couldn't reach Archidekt — paste the deck's text or CSV export instead",
         )
     lines: list[ParsedLine] = []
@@ -343,7 +343,7 @@ async def _parse_moxfield(url: str) -> tuple[list[ParsedLine], dict]:
         data = await fetch_json("moxfield", api_url, ttl=300)
     except ThirdPartyError:
         raise HTTPException(
-            status_code=502,
+            status_code=422,
             detail="couldn't reach Moxfield — paste the deck's text or CSV export instead",
         )
     lines: list[ParsedLine] = []
@@ -369,7 +369,7 @@ async def _parse_moxfield(url: str) -> tuple[list[ParsedLine], dict]:
     # instead of raising, so an empty result means "not a readable deck".
     if not lines:
         raise HTTPException(
-            status_code=502,
+            status_code=422,
             detail="couldn't read that Moxfield deck (private or not found) — "
             "paste the deck's text or CSV export instead",
         )
