@@ -29,3 +29,31 @@ cd backend && pip install -r requirements.txt && uvicorn app.main:app --reload -
 # frontend (separate shell) — proxies /api to :8099
 cd frontend && npm install && npm run dev   # http://localhost:5173
 ```
+
+**Dev loop actually used (Mac has no local backend/Postgres):** tunnel the real
+server backend and let Vite proxy to it —
+
+```bash
+ssh -o ServerAliveInterval=30 -fN -L 8099:localhost:8099 mrfuji@diglettscave.cooldad.top
+cd frontend && npm run dev   # localhost:5173 → real API + card DB
+```
+
+Use Chrome/Firefox for http://localhost dev — the session cookie is `Secure`,
+which Safari drops on plain-http localhost. Dev writes hit the live DB.
+
+## Redeploy (server) — snap-Docker AppArmor gotcha
+
+`docker stop` (and compose's Recreate) is blocked by AppArmor. Reliable sequence:
+
+```bash
+# 1. detached build (SSH drops kill foreground builds)
+cd /root/stacks/deckbuilder && setsid nohup bash -c 'docker compose up -d --build' > rebuild.log 2>&1 &
+# 2. if Recreate failed ("cannot stop container"), swap manually:
+docker update --restart=no deckbuilder
+kill "$(docker inspect -f '{{.State.Pid}}' deckbuilder)"   # wait for exited
+docker rm -f deckbuilder && docker compose up -d
+docker rename "$(docker ps -a --format '{{.Names}}' | grep '_deckbuilder$')" deckbuilder 2>/dev/null
+docker update --restart=unless-stopped deckbuilder
+# 3. verify the running image matches the latest build
+docker inspect -f '{{.Image}}' deckbuilder ; docker images --no-trunc --format '{{.ID}}' deckbuilder-deckbuilder:latest
+```
