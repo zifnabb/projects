@@ -1,10 +1,10 @@
-/* Search rail (PLAN §8 / DESIGN §8.6) — docked right of the board. */
+/* Search rail (PLAN §8 / DESIGN §8.6) — docked left of the board. */
 .panel {
   flex: 0 0 400px;
   display: flex;
   flex-direction: column;
   background: var(--color-surface);
-  border-left: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
   height: calc(100vh - 56px - 65px - 63px); /* topbar + header + toolbar */
   position: sticky;
   top: 0;

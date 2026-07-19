@@ -102,9 +102,6 @@ export function BuilderPage() {
         onToggleSearch={() => setParam("search", searchOpen ? "0" : "1")}
       />
       <div className={styles.workspace}>
-        <main className={styles.boardArea}>
-          <Board deck={deck} columns={columns} view={view} actions={actions} />
-        </main>
         {searchOpen && (
           <SearchPanel
             deck={deck}
@@ -112,6 +109,9 @@ export function BuilderPage() {
             onAdd={(card) => addCard.mutate(card)}
           />
         )}
+        <main className={styles.boardArea}>
+          <Board deck={deck} columns={columns} view={view} actions={actions} />
+        </main>
       </div>
     </div>
   );
