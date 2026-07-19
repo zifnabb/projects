@@ -12,6 +12,7 @@ STACKS = {
     "media": {"label": "Media & Streaming", "color": "#9b59b6"},
     "mailserver": {"label": "Email", "color": "#e67e22"},
     "mcp": {"label": "MCP / AI Tools", "color": "#00bcd4"},
+    "deckbuilder": {"label": "Deckbuilder", "color": "#e8552e"},
     "system": {"label": "System", "color": "#95a5a6"},
 }
 
@@ -58,6 +59,7 @@ SUBDOMAINS = [
     {"subdomain": "rocketcorner", "service": "Invidious", "container": "invidious", "port": 8081, "auth": False, "stack": "media"},
     {"subdomain": "rockethideout", "service": "Invidious Companion", "container": "invidious-companion", "port": 8282, "auth": False, "stack": "media"},
     {"subdomain": "rocktunnel", "service": "Radarr", "container": "radarr", "port": 7878, "auth": True, "stack": "media"},
+    {"subdomain": "vermilion", "service": "Deckbuilder", "container": "deckbuilder", "port": 8099, "auth": False, "stack": "deckbuilder"},
     {"subdomain": "viridian", "service": "Baikal", "container": "baikal", "port": 8085, "auth": False, "stack": "infra"},
     {"subdomain": "webmail", "service": "SnappyMail", "container": "snappymail", "port": 8888, "auth": False, "stack": "mailserver"},
     {"subdomain": "mcp", "service": "MCP Server", "container": "lavender-mcp", "port": 8765, "auth": True, "stack": "mcp"},
@@ -76,6 +78,7 @@ INTERNAL_SERVICES = [
     "cloudflared",
     "npm",
     "mailserver",
+    "deckbuilder-postgres",
 ]
 
 # Containers that have subdomains but should NOT be linked from the dashboard

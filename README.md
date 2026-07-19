@@ -62,6 +62,8 @@ Documentation and Docker Compose configurations for managing homelab container s
 | 8088 | Pi-hole (Web UI) | bigstackd |
 | 8090 | qBittorrent | media |
 | 8096 | Jellyfin | media |
+| 8099 | Deckbuilder ("vermilion") | deckbuilder |
+| 5436 | PostgreSQL — Deckbuilder | databases |
 | 8191 | FlareSolverr | media |
 | 8282 | Invidious Companion | media |
 | 8888 | SnappyMail | mailserver |
@@ -118,6 +120,7 @@ sudo systemctl restart xrdp xrdp-sesman
 | `rocketcorner.cooldad.top` | Invidious | - |
 | `rockethideout.cooldad.top` | Invidious Companion | - |
 | `rocktunnel.cooldad.top` | Radarr | Authentik |
+| `vermilion.cooldad.top` | Deckbuilder | app login (invite-only) |
 | `viridian.cooldad.top` | Baikal | - |
 | `webmail.cooldad.top` | SnappyMail | - |
 
@@ -143,11 +146,9 @@ For most stacks, `docker-compose.yml` is also present (mirrors what Dockge manag
 
 Not yet **publicly shipped** — ports/subdomains reserved here to avoid collisions. These deliberately stay out of the live Port Map / Subdomains tables and the dashboard config until they're reachable via NPM/Cloudflare.
 
-| Service | Stack dir | Port(s) | Subdomain | Auth | Design |
-|---------|-----------|---------|-----------|------|--------|
-| Deckbuilder ("vermilion") | [stacks/deckbuilder/](stacks/deckbuilder/) | 8099 (app), 5436 (PostgreSQL, in `databases`) | `vermilion.cooldad.top` | app's own invite-only login (no Authentik) | [PLAN.md](stacks/deckbuilder/PLAN.md) |
+*(none currently)*
 
-**Deckbuilder** — a private, invite-only, Commander-focused MTG deck builder (Archidekt-style, zero community surface): React SPA + FastAPI + PostgreSQL, custom-build stack (rsync → Dockge → `build: .`). **Build complete through Phase 6 (branch `deckbuilder-build`): full UI (auth · home · New Deck · Stacks builder · search panel · card detail · stats · admin) + export/import/clone/share are deployed on the server + verified on `:8099`. Remaining for public launch (Phase 7): NPM proxy host `vermilion.cooldad.top` → `192.168.1.222:8099` (no Authentik) + the Cloudflare Tunnel public-hostname route — both manual dashboard steps.** Once proxied, move this row into the live Port Map / Subdomains tables and add `deckbuilder` to the lavender-dashboard config. Full 19-section design in [stacks/deckbuilder/PLAN.md](stacks/deckbuilder/PLAN.md); deploy steps in its §18.
+**Deckbuilder ("vermilion") — LIVE as of 2026-07-19** at [vermilion.cooldad.top](https://vermilion.cooldad.top): a private, invite-only, Commander-focused MTG deck builder (Archidekt-style, zero community surface). React SPA + FastAPI + PostgreSQL, custom-build stack (tar → `/root/stacks/deckbuilder/` → `build: .`); app's own invite-only login, **no Authentik**. Cloudflare Tunnel route: `http://localhost:80` (plain HTTP into NPM — an `https://` scheme there causes 502 "not a TLS handshake"). Full 19-section design in [stacks/deckbuilder/PLAN.md](stacks/deckbuilder/PLAN.md); operational notes + redeploy steps in [deckbuilder/README.md](deckbuilder/README.md).
 
 ## Legacy
 
