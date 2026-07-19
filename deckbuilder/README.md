@@ -41,6 +41,14 @@ cd frontend && npm run dev   # localhost:5173 → real API + card DB
 Use Chrome/Firefox for http://localhost dev — the session cookie is `Secure`,
 which Safari drops on plain-http localhost. Dev writes hit the live DB.
 
+## Service accounts
+
+- **`claude-qa`** (non-admin) — used by Claude for authenticated API smoke
+  tests against the live site (login → scratch deck → exercise endpoints →
+  delete). Password lives on the server in `/root/stacks/deckbuilder/.env`
+  as `CLAUDE_QA_PASSWORD` (never committed). Deactivate it from the admin
+  panel any time; recreate = mint an invite + register.
+
 ## Redeploy (server) — snap-Docker AppArmor gotcha
 
 `docker stop` (and compose's Recreate) is blocked by AppArmor. Reliable sequence:
