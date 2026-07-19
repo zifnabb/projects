@@ -36,13 +36,16 @@
   color: var(--color-text-muted);
 }
 
-/* Game Changer badge + flip button stack on the right edge, BELOW the mana
-   pips. Placed low enough that the Stacks fan overlap tucks them away at rest
-   (only the card title strip shows) and reveals them when the card expands on
-   hover/focus. In Grid/List (no overlap) they're always visible. */
+/* Game Changer badge + flip button sit on the right edge, straddling the
+   bottom of the card's visible title strip. Crucially they carry NO z-index,
+   so the next card in the Stacks fan paints OVER their lower half — they read
+   as tucked into the card (partially visible), not floating on top. When the
+   row is hovered/focused the fan raises that row above its neighbours, fully
+   revealing them (same reveal as the ⋯ menu). In Grid (full cards) they show
+   in full. */
 .gameChanger {
   position: absolute;
-  top: 10.5%;
+  top: 11%;
   right: 3%;
   display: inline-flex;
   align-items: center;
@@ -56,15 +59,14 @@
   letter-spacing: 0.03em;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
   pointer-events: none;
-  z-index: 2;
 }
 
-/* Flip button for double-faced cards — stacked under the GC badge on the right,
-   below the mana pips (tucked in the fan, revealed on hover/focus). Its top
-   nudges up to 10.5% when there's no GC badge above it (set inline). */
+/* Flip button — stacked under the GC badge on the right, tucked in the fan and
+   revealed on hover/focus (no z-index, so the next card clips it at rest). Its
+   top nudges up to the badge slot when there's no GC badge above it (inline). */
 .flipButton {
   position: absolute;
-  top: 19.5%;
+  top: 20%;
   right: 3%;
   width: 24px;
   height: 24px;
@@ -76,7 +78,6 @@
   background: rgba(0, 0, 0, 0.72);
   color: #fff;
   cursor: pointer;
-  z-index: 4;
 }
 .flipButton:hover {
   background: rgba(0, 0, 0, 0.9);
