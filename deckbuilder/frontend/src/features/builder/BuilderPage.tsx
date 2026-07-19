@@ -1,60 +1,103 @@
 /**
- * Deck builder — PLACEHOLDER. The full Builder shell (Stacks board, toolbar,
- * rails — PLAN §11 / DESIGN §8.4) is the next slice; this page proves the
- * route, the deck query, and the create→land flow.
+ * Deck builder (PLAN §11 / DESIGN §8.4) — Builder shell slice 1: deck header,
+ * control toolbar, and the Stacks board. Search rail, card detail panel, and
+ * stats sidebar are the next slices. View/group/sort persist in URL params.
  */
-import { ArrowLeft } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { ColorPipBar } from "../../components/mtg/ColorPipBar";
-import { LegalityPill } from "../../components/mtg/Pill";
-import { timeAgo } from "../../lib/timeAgo";
-import { decksApi } from "../decks/api";
+import { useSearchParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import type { AutocompleteResult, DeckCardRow } from "../../lib/types";
+import { decksApi, useDeck, useDeckMutation } from "../decks/api";
+import { Board, type CardActions } from "./Board";
+import { DeckHeader } from "./DeckHeader";
+import { Toolbar } from "./Toolbar";
+import {
+  buildColumns,
+  defaultGroupBy,
+  type GroupBy,
+  type SortBy,
+  type ViewAs,
+} from "./grouping";
+import styles from "./BuilderPage.module.css";
 
 export function BuilderPage() {
   const { deckId } = useParams<{ deckId: string }>();
-  const { data: deck, isLoading } = useQuery({
-    queryKey: ["deck", deckId],
-    queryFn: () => decksApi.get(deckId!),
-    enabled: !!deckId,
-  });
+  const { data: deck, isLoading } = useDeck(deckId);
+  const [params, setParams] = useSearchParams();
 
-  if (isLoading || !deck) return null;
+  const rename = useDeckMutation(deckId!, (name: string) =>
+    decksApi.update(deckId!, { name }),
+  );
+  const addCard = useDeckMutation(deckId!, (card: AutocompleteResult) =>
+    decksApi.addCard(deckId!, { oracle_id: card.oracle_id }),
+  );
+  const updateCard = useDeckMutation(
+    deckId!,
+    (args: { rowId: string; body: Partial<{ board: string; quantity: number; category_id: string | null }> }) =>
+      decksApi.updateCard(deckId!, args.rowId, args.body),
+  );
+  const removeCard = useDeckMutation(deckId!, (rowId: string) =>
+    decksApi.removeCard(deckId!, rowId),
+  );
+
+  if (isLoading || !deck) {
+    return (
+      <div className={styles.loading}>
+        <div className={styles.skeletonHeader} />
+        <div className={styles.skeletonBoard}>
+          {Array.from({ length: 5 }, (_, i) => (
+            <div key={i} className={styles.skeletonColumn} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const hasCategories = deck.categories.length > 0;
+  const view = (params.get("view") as ViewAs) || "stacks";
+  const groupParam = params.get("group") as GroupBy | null;
+  const group: GroupBy =
+    groupParam && (groupParam !== "categories" || hasCategories)
+      ? groupParam
+      : defaultGroupBy(deck);
+  const sort = (params.get("sort") as SortBy) || "mv";
+
+  function setParam(key: string, value: string) {
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set(key, value);
+        return next;
+      },
+      { replace: true },
+    );
+  }
+
+  const columns = buildColumns(deck, group, sort);
+
+  const actions: CardActions = {
+    setQuantity: (row: DeckCardRow, quantity: number) =>
+      updateCard.mutate({ rowId: row.id, body: { quantity } }),
+    remove: (row: DeckCardRow) => removeCard.mutate(row.id),
+    moveBoard: (row: DeckCardRow, board: string) =>
+      updateCard.mutate({ rowId: row.id, body: { board } }),
+    moveCategory: (row: DeckCardRow, categoryId: string | null) =>
+      updateCard.mutate({ rowId: row.id, body: { category_id: categoryId } }),
+  };
 
   return (
-    <div style={{ maxWidth: 960, margin: "0 auto", padding: "var(--space-9)" }}>
-      <Link
-        to="/"
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 6,
-          fontSize: 13,
-          marginBottom: "var(--space-6)",
-        }}
-      >
-        <ArrowLeft size={14} aria-hidden="true" /> Your decks
-      </Link>
-      <div style={{ display: "flex", alignItems: "center", gap: "var(--space-5)" }}>
-        <h1 className="t-h1" style={{ margin: 0 }}>
-          {deck.name}
-        </h1>
-        <ColorPipBar identity={deck.color_identity} />
-        <LegalityPill legal={deck.legality.legal} />
-      </div>
-      <p className="t-caption" style={{ marginTop: "var(--space-4)" }}>
-        {deck.format_info.name} · {deck.legality.size}
-        {deck.legality.target_size ? `/${deck.legality.target_size}` : ""} cards ·
-        updated {timeAgo(deck.updated_at)}
-      </p>
-      <p className="t-caption" style={{ marginTop: "var(--space-6)" }}>
-        {deck.categories.length > 0
-          ? `Template categories seeded: ${deck.categories.map((c) => c.name).join(" · ")}`
-          : "No categories — the board will group by Type."}
-      </p>
-      <p className="t-caption" style={{ opacity: 0.7 }}>
-        The Stacks board lands here next.
-      </p>
+    <div>
+      <DeckHeader deck={deck} onRename={(name) => rename.mutate(name)} />
+      <Toolbar
+        view={view}
+        group={group}
+        sort={sort}
+        hasCategories={hasCategories}
+        onView={(v) => setParam("view", v)}
+        onGroup={(g) => setParam("group", g)}
+        onSort={(s) => setParam("sort", s)}
+        onAdd={(card) => addCard.mutate(card)}
+      />
+      <Board deck={deck} columns={columns} view={view} actions={actions} />
     </div>
   );
 }

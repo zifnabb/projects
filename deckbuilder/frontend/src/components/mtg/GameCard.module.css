@@ -1,0 +1,55 @@
+/* GameCard — a rendering of an actual MTG card (DESIGN §7.6-1). */
+.frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 63 / 88; /* real card proportions */
+  border-radius: 4.8% / 3.4%; /* MTG corner radius, relative */
+  overflow: hidden;
+  background: var(--color-surface-sunken);
+}
+
+.frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* text fallback when no image is available */
+.fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border-strong);
+  border-radius: inherit;
+}
+.fallbackName {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 15px;
+}
+.fallbackType {
+  font-size: 10px;
+  color: var(--color-text-muted);
+}
+
+.qtyBadge {
+  position: absolute;
+  top: 4%;
+  left: 3%;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}

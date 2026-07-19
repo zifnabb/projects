@@ -1,0 +1,29 @@
+.loading {
+  padding: 0;
+}
+.skeletonHeader {
+  height: 64px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+.skeletonBoard {
+  display: flex;
+  gap: var(--space-5);
+  padding: var(--space-6);
+}
+.skeletonColumn {
+  width: 208px;
+  height: 320px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-sunken);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
