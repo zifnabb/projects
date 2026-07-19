@@ -11,19 +11,18 @@
 A **private Archidekt/Moxfield-style deck builder** for the user + a few friends, **with zero community/social surface**. Primarily for **Commander/EDH**. Backed by the **Scryfall API** and **EDHREC**.
 
 - **Archidekt is the north-star** for feel/feature shape (the user prefers it over Moxfield).
-- **Delegate, don't rebuild** the hard analytical stuff (salt/bracket/power) to specialist sites.
+- **Don't rebuild** the hard analytical stuff (salt/bracket/power) — and don't grade at all (the link-out plan was cut, §5).
 - **Robust core, fragile enrichment quarantined** — the deck builder must be fully useful on Scryfall alone; EDHREC/grading are enrichment that may fail gracefully.
 - **Design-in-now, build-later** — MVP is architected so post-MVP features slot in without rework (theming, format catalog, tag sources, search tab-shell, grading hooks, shared HTTP adapter).
 
 ## 2. Status & open items
 
-- **Phases 0–6 done + verified on the server (2026-07-19):** scaffold · card data (38k cards / 109k printings synced) · search (Scryfall proxy + adapter + compiler) · auth (username invites, JWT, admin) · decks (CRUD, legality, categories, templates, share) · **UI** (auth screens · home dashboard + unified Cards↔Decks search · New Deck modal · builder with Stacks/List/Grid board, group-by Categories⇄Type, quick-add, Search rail (merged form + Syntax tabs, deck-context prefilled), card detail panel (Card Info/More Info/Rulings, printing selector, set-link → search), stats sidebar (curve · color cost/production · counts) · account + admin screens) · **§13 header/import-export** (clone · Private/Shared + copy share link · export text/Arena/JSON · smart import paste/CSV/JSON/**Archidekt URL** with fuzzy resolve + review + add/replace/new · `/shared/<token>` public read-only view). Singleton rule enforced UI+API (non-exempt cards cap at 1; basics/"any number" exempt). Frontend stack: TanStack Query + Context + react-router-dom; Radix + CSS Modules. **REMAINING = Phase 7 public exposure (manual dashboard steps): NPM host `vermilion.cooldad.top` → `192.168.1.222:8099` + Cloudflare Tunnel route; then README live tables + lavender-dashboard config.** Migrations at `0004`. **Post-MVP blockers unchanged:** commandersalt courtesy email (grading link-out); Moxfield URL import courtesy-check (Archidekt URL + paste shipped instead).
+- **Phases 0–6 done + verified on the server (2026-07-19):** scaffold · card data (38k cards / 109k printings synced) · search (Scryfall proxy + adapter + compiler) · auth (username invites, JWT, admin) · decks (CRUD, legality, categories, templates, share) · **UI** (auth screens · home dashboard + unified Cards↔Decks search · New Deck modal · builder with Stacks/List/Grid board, group-by Categories⇄Type, quick-add, Search rail (merged form + Syntax tabs, deck-context prefilled), card detail panel (Card Info/More Info/Rulings, printing selector, set-link → search), stats sidebar (curve · color cost/production · counts) · account + admin screens) · **§13 header/import-export** (clone · Private/Shared + copy share link · export text/Arena/JSON · smart import paste/CSV/JSON/**Archidekt URL** with fuzzy resolve + review + add/replace/new · `/shared/<token>` public read-only view). Singleton rule enforced UI+API (non-exempt cards cap at 1; basics/"any number" exempt). Frontend stack: TanStack Query + Context + react-router-dom; Radix + CSS Modules. **REMAINING = Phase 7 public exposure (manual dashboard steps): NPM host `vermilion.cooldad.top` → `192.168.1.222:8099` + Cloudflare Tunnel route; then README live tables + lavender-dashboard config.** Migrations at `0004`. **Live feedback phase (2026-07-20):** iterating on real-use fixes (see the queued-feedback list at the end of §2).
 - **DECISION (2026-07-18) — login identity is `username`, not email.** The app is already email-free (no mailserver, admin-assisted resets), so email is dropped entirely: `users` uses a unique **`username`** as the login identity; register/login forms take username; the admin panel lists by username; admin bootstraps as **`zifnabb`**. "No user enumeration" and rate-limit rules apply to username. Wherever §6/§15 below say "email" as the identifier, read **username**. (A polite contact email may still appear in the outbound HTTP `User-Agent` for third-party APIs — unrelated to login.)
-- **BLOCKER (post-MVP only):** send a courtesy email to the **commandersalt.com dev** before shipping the grading link-out (attribution + backlink offered in return). *(Same blocker gates the EDH Salt Score row on the card-detail More Info tab, §9.)*
-- **SOFT BLOCKER (MVP import):** **Moxfield URL-import** is access-sensitive (their API enforces UA rules / has restricted third-party use) — do a courtesy-check before shipping *Moxfield* URL pull (§13). Archidekt URL-import (the primary migration path) and paste/upload import are unaffected.
 - **Verify before deploy:** ports **8099** (app) and **5436** (Postgres) are still free — check the port map in [../../README.md](../../README.md). Subdomain `vermilion` confirmed unused at planning time.
-- **Deferred decisions:** whether to add Redis (currently: Postgres-backed caches are enough); whether "shared" decks get a discovery feed (currently: explicit per-deck share links only, no feed); scope of the **Default Cards (all-printings) sync** — pulled into MVP for the card-detail printing selector (§9), kept slim (printing rows only, prices reserved).
-- **QUEUED (feedback phase, 2026-07-19): Stats sidebar v2** — view-switcher rail (Condensed / Colors / Mana Curve / Probability / Quantities) + pin/unpin + Cost&Production options menu; full spec in §11 "Stats sidebar". First up in the post-launch feedback queue, ahead of the §16 roadmap items.
+- **DECISIONS LOCKED (2026-07-20):** **no Redis** (Postgres caches suffice) · **shared decks stay a per-link feature** (no discovery feed) · **Moxfield URL-import ships un-gated** — pull it like Archidekt (no courtesy-check gate; the earlier concern was overcautious) · **deck grading cut entirely** (§5) · **deckbuilding template default OFF** (was ON; user has tested enough) and MVP ships **one** Commander template · **Clone can target another user's *shared* deck** · Synergy results always fill the category they belong to, **never Uncategorized** (§14) · **undo/version history + playtester/goldfish are OUT of scope** (not just deferred). *"Default Cards sync" = the second Scryfall bulk file: `cards` is one row per gameplay-unique card (names/rules/legality), `printings` is one row per physical printing (each set/art) — that second sync is what powers the card panel's printing/art selector; kept slim (no prices yet). Nothing to decide — noted because the term was unclear.*
+- **QUEUED — Stats sidebar v2** (spec'd 2026-07-19, §11 "Stats sidebar"): view-switcher rail (Condensed / Colors / Mana Curve / Probability / Quantities) + pin/unpin + Cost&Production options menu. First substantial feature after the current bug-fix pass.
+- **QUEUED — live-feedback bug/polish pass (2026-07-20, in progress):** MDFC/DFC render + flip button (all views) · Grid view = real grid (was fanning like Stacks) · List view masonry-packs like Stacks · card-printing change reflects in the board image · **Game Changers** per-card label in every view · Savage-Lands-style name collisions (Jumpstart front-card `token` layout shadowing the real card) resolve to the playable card in search + import · Moxfield URL import · home "Your decks" full list + top nav button.
 
 ---
 
@@ -38,7 +37,7 @@ Screenshots were compared across Archidekt, Moxfield, and Scryfall's deck builde
 - Collapsible/pinnable **stats side-liner** (Deck Info, Color Cost & Production, curve, category counts).
 - Command Zone is **optional** even when a commander is picked.
 - Multi-tab search shell: Archidekt-search / Syntax / EDH Recs / Landbase / Combos (we generalize this).
-- "Est Bracket" / "Salt sum" in the header → we delegate these to commandersalt (see §6).
+- "Est Bracket" / "Salt sum" in the header → **cut** (grading dropped, §5); we don't compute or link these.
 
 **From Moxfield:**
 - Home page: **Card search + Deck search** (unified, tabbed).
@@ -65,7 +64,7 @@ Screenshots were compared across Archidekt, Moxfield, and Scryfall's deck builde
 - **Database:** PostgreSQL — new instance in the centralized `databases` stack.
 - **One container, multi-stage Docker:** `node:22` stage builds the SPA → static assets copied into a `python:3.12-slim` image running `uvicorn` (mirrors [../lavender-dashboard/Dockerfile](../lavender-dashboard) + a frontend stage). **No Node at runtime**; the rsync→Dockge→`build: .` flow is unchanged from `mcp-server`.
 - **Themeable (dark/light) from day one** — CSS variables + React theme context, persisted per user. Hard requirement.
-- **Shared outbound-HTTP adapter** — ONE polite client behind which ALL third-party calls sit (Scryfall search, EDHREC, Commander Spellbook, commandersalt, **Archidekt/Moxfield deck URL-import §13**): descriptive `User-Agent`, `<10 req/s` throttle+queue, backoff-on-429, response cache (Postgres `api_cache`; Redis optional later), graceful-degrade. Frontend never calls third parties directly (CORS + caching + swappability).
+- **Shared outbound-HTTP adapter** — ONE polite client behind which ALL third-party calls sit (Scryfall search, EDHREC, Commander Spellbook, **Archidekt/Moxfield deck URL-import §13**): descriptive `User-Agent`, `<10 req/s` throttle+queue, backoff-on-429, response cache (Postgres `api_cache`; **no Redis — decided 2026-07-20, Postgres caches are enough**), graceful-degrade. Frontend never calls third parties directly (CORS + caching + swappability).
 
 ### Fixed values (verify ports before deploy)
 | Thing | Value |
@@ -103,11 +102,10 @@ This is the most important context to preserve — each integration's viability,
 - **Real open, documented, community API + downloadable combo dataset.** The one clean third-party source.
 - Powers: Combos tab ("Included" = fully in deck / "Almost Included" = missing ~1) and the Synergy "combos with this card" cross-ref. (Also could power local bracket estimation if ever wanted — but bracket is delegated, see below.)
 
-### commandersalt.com — salt / bracket / power grading (DELEGATED via link-out)
-- Best-in-class salt+bracket+power judge; hand-built by a senior dev, refined against ~1.69M indexed decks. **Do NOT rebuild** — salt is crowd-sentiment (not computable locally); power is a contested, data-heavy rabbit hole; bracket is buildable (WotC Game Changers list + Commander Spellbook combos + curated lists) but redundant.
-- **Has an undocumented-but-real JSON API.** Confirmed example (per-card): `https://api.commandersalt.com/details?id=kenrith_the_returned_king&isCard=true` returns salt, price, parsed oracle, etc. Deck endpoint is by analogy `…/details?id={deckhash}` (site URL `/details/deck/{hash}`). Deck grading requires ingesting the deck first (get a hash), then GETting details.
-- **Chosen integration = "Grade My Deck" LINK-OUT** (opt-in per deck) that hands the decklist to commandersalt and shows credit + links back — NOT embedding their data. Rationale: respectful to a solo dev, zero grading logic/maintenance in our code, and grading sends the deck to their public index (opt-in, never automatic — user is OK with the send).
-- **BLOCKED on a courtesy email to the dev** before shipping. Provider-agnostic hook so it could upgrade to *embedded* (using their API) if blessed. Reserved deck fields `commandersalt_hash`/`grade_json`/`graded_at` support that upgrade.
+### Deck grading (salt / bracket / power) — CUT (2026-07-20)
+- Grading was going to be a **"Grade My Deck" link-out to commandersalt.com**. **Cut for good:** commandersalt's importer only accepts decklists from a fixed allowlist of sites (moxfield · archidekt · tappedout · manabox · scryfall · topdecked · topdeck.gg · hareruyamtg) — **vermilion isn't one of them, so it can never read our decks.** No embedding either (respect for a solo dev's data). The §1 principle stands — we still **don't rebuild** salt/bracket/power locally — we simply don't offer grading at all.
+- Vestigial: the `decks` table has inert reserved columns `commandersalt_hash`/`grade_json`/`graded_at` from this plan; they're unused and can be dropped in a future migration.
+- The WotC **Game Changers** flag is *unrelated* to this and stays (it's a static card list, surfaced as a per-card label in the builder — see §9 / §11).
 
 ### DeckCheck (deckcheck.co) — REJECTED for grading
 - Clean, documented, keyed API (`/api/external/deck`, `/deck-search`) — BUT **read-only over decks already on DeckCheck** (no "analyze an arbitrary list" endpoint), so it **cannot grade our private decks**. Also its **Permitted Use ToS explicitly forbids** using the API/data to build a "deck database / recommendation system / analytics product / similar service," calling undocumented endpoints, or combining with automation.
@@ -126,7 +124,7 @@ This is the most important context to preserve — each integration's viability,
 - **`users`** — id, email, password_hash (bcrypt), display_name, is_admin, theme_pref, created_at, **`is_active`**, **`last_login_at`**, **`token_version`** (per-user session invalidation, §15).
 - **`invites`** — `code` (**is** the magic-link token — random urlsafe, §15), created_by, used_by, expires_at, **`note`** (optional "for whom").
 - *(§15)* **`password_resets`** — token, user_id, expires_at, used_at (admin-minted one-time reset links; email-free).
-- **`decks`** — id, user_id, name (auto-randomized if blank), format, commander_card_id (nullable), color_identity, description, deck_art_card_id, visibility (`private`|`shared`), **`share_token`** (unguessable, nullable — the public read-only link when Shared, §13), created_at, updated_at. **Reserved grading hooks (inert until post-MVP):** `commandersalt_hash`, `grade_json`, `graded_at`.
+- **`decks`** — id, user_id, name (auto-randomized if blank), format, commander_card_id (nullable), color_identity, description, deck_art_card_id, visibility (`private`|`shared`), **`share_token`** (unguessable, nullable — the public read-only link when Shared, §13), created_at, updated_at. **Vestigial grading columns** `commandersalt_hash`/`grade_json`/`graded_at` exist but are **unused** (grading cut, §5) — droppable in a later migration.
 - **`deck_cards`** — deck_id, card ref, board (`main`|`side`|`maybe`|`command`), quantity, finish, **`printing_id`** (chosen printing; null = default), **`category_id`** (FK → `deck_categories`, nullable = Uncategorized; the multi-view group-by grouping, distinct from board).
 - **`deck_categories`** *(§11)* — id, deck_id, name, position, **`target_min`/`target_max`** (nullable count range shown in the column header), color_tag, `source` (`template`|`user`). Deck-level so categories **exist empty**; seeded by the deckbuilding-template toggle (§11), then freely edited.
 - *(added for §9)* **`printings`** — per-printing rows off `oracle_id` (set code/name, collector no., rarity, finishes, `image_uris`, **reserved** price fields) from the slimmed Default Cards sync; powers the printing selector + All-printings list.
@@ -258,7 +256,7 @@ Clicking **any** card (in a deck, in search results, in Synergy, anywhere) opens
 - **Full legality grid** — every format ✓/✗ *(all three references show this)*.
 - **Meta fields** — Rarity, **EDHREC Rank** (bulk `edhrec_rank`), Artist, Collector Number, Mana Value, Color Identity, Keywords.
 - **Related searches** — a few generated example queries (e.g. `art:"<subject>"`, `name:"<name>"`) *(Scryfall)*.
-- **Enrichment (fragile, graceful-degrade — quarantined per §1):** EDH **Salt Score** (commandersalt), **Commander Gamechanger** flag (WotC Game Changers list), **Canadian Highlander points**. Blank/omitted when the source is unavailable; the Salt Score row shares the **same commandersalt courtesy-email BLOCKER** as grading (§2). MVP renders the robust bulk fields; enrichment rows slot in as those integrations land.
+- **Enrichment (fragile, graceful-degrade — quarantined per §1):** **Commander Game Changers** flag (WotC's static list — shipping now as a per-card label, §11), **Canadian Highlander points**. *(EDH Salt Score is cut with grading, §5.)* Blank/omitted when unavailable; MVP renders the robust bulk fields, enrichment rows slot in as those integrations land.
 
 **3. Rulings** — official Gatherer rulings with dates *(Archidekt "Rulings" tab)*.
 - Rulings are **NOT in the Scryfall bulk export** → fetched **on-demand** via the shared HTTP adapter (`/cards/:id/rulings`), **cached** in `api_cache`, graceful-degrade ("rulings unavailable" on fetch failure). Cheap — one cached call when the tab is opened.
@@ -288,7 +286,7 @@ The **personal** entry point — no community, feed, likes, or views (all cut, �
 - Friends' **shared** decks are reached by **link only** — they do NOT surface on your home (consistent with §2: per-deck share links, no discovery feed).
 - Add-to-Deck from a bare home card search needs a target → **deck picker or "start new deck"** (never silently adds).
 
-**Open items:** whether "Your decks" is capped-recent + a full list, or one filterable grid (lean: recent grid + the Decks-tab search as the "all decks" view); whether the home Cards tab shares the builder's Search backend (§8) at reduced chrome or a simpler local-only lookup (lean: local `pg_trgm` autocomplete + on-demand full search behind the same adapter).
+**Decided (2026-07-20):** "Your decks" is a **full list of all your decks** (not capped-recent) with a **top nav button** for quick access, plus client sort/filter. The home Cards tab uses local `pg_trgm` autocomplete + on-demand full search behind the same adapter.
 
 **Layout (wireframe):**
 
@@ -330,7 +328,7 @@ The **core workspace** — where Search (§8), the card detail panel (§9), boar
 - **Local filter** — instant client-side filter of the open deck *(Archidekt "Filter deck")*, with saveable filters.
 
 **Deckbuilding template (category skeleton)** — *the optional, default-ON new-deck toggle the user asked for.*
-- On **New Deck** (Commander), a **"Start from deckbuilding template"** toggle (**default ON**) seeds the deck with an **empty category skeleton** carrying target ranges, so the deck opens already grouped into buckets that guide building (mirrors `ref_deckbuilding_template.png`). Off → a single empty deck, no categories.
+- On **New Deck** (Commander), a **"Start from deckbuilding template"** toggle (**default OFF as of 2026-07-20** — was ON during early testing; user has validated it enough that a clean deck is the better default) seeds the deck with an **empty category skeleton** carrying target ranges, so the deck opens already grouped into buckets that guide building (mirrors `ref_deckbuilding_template.png`). Off → a single empty deck, no categories.
 - **Default MVP template (Commander)** — a sensible, curatable EDH skeleton, e.g.: `Commander (1)` · `Lands (35-38)` · `Ramp / Mana Rocks (8-12)` · `Card Draw (8-12)` · `Removal (5-10)` · `Board Wipes (2-4)` · `Main Theme (20-30)` · `Flex / Optional (0-10)`.
 - Template categories become ordinary `deck_categories` once seeded — rename / retarget / delete freely; adding a card assigns it to a bucket (or **Uncategorized**).
 - **Ranges are advisory:** the column header shows count vs target and a bucket under/over range gets a subtle flag — this does **NOT** affect the format legality ✓/✗ (that's the separate validator). The **template catalog is config** (like the §6 format catalog), so more templates/formats slot in later.
@@ -358,7 +356,7 @@ The **core workspace** — where Search (§8), the card detail panel (§9), boar
 
 **Autosave** — edits persist immediately (no manual save); "updated X ago" reflects it.
 
-**Open items:** undo / version history (**post-MVP**); Archidekt's **Playtester/goldfish** (post-MVP — cut for MVP); whether category range-flags surface in the left ✓ status or only per-column (lean: per-column; ✓ stays format-legality only); how many built-in templates ship at MVP (lean: one Commander skeleton + "none").
+**Decided (2026-07-20):** undo / version history and Archidekt's **Playtester/goldfish** are **out of scope** for this project (not merely deferred). Category range-flags surface **per-column only** (the header ✓ stays format-legality only — a bucket over/under its advisory range never makes the deck "Draft"). MVP ships **one** built-in Commander template (+ "none").
 
 **Layout (wireframe — Stacks view, grouped by Categories, template-seeded):**
 
@@ -397,7 +395,7 @@ The **create step** — kept compact, opens from **+ New Deck** (home §10 / glo
 - Changing **Format** re-evaluates template availability + whether a commander is required/allowed.
 - No commander on a Commander deck is allowed → deck stays **Draft** (legality ✗) until valid — expected, not an error.
 
-**Open items:** random-name source (curated local MTG word-list vs a generator — **lean: local curated list, fully offline**); whether "clone existing" and "import list to create a deck" surface here or stay on home/header (**lean: Import + Clone live on the deck card / builder header §11; New Deck stays a clean create**).
+**Resolved (built):** random names come from a curated local MTG word-list (fully offline); Import + Clone live on the deck card / builder header (§11), New Deck stays a clean create.
 
 **Layout (wireframe):**
 
@@ -441,11 +439,11 @@ Pipeline: **input** (paste text · upload `.txt`/`.csv`/`.json` · paste an **Ar
 
 **URL pull (Archidekt / Moxfield)** — *(opted in)* fetch a public deck by URL via the **shared HTTP adapter (§4)** — descriptive UA, throttle, cache, **graceful-degrade**. **Fragile, quarantined:** unofficial endpoints that can change; on failure, fall back to "paste the tool's text/CSV export."
 - **Archidekt** = primary (the migration source); its deck JSON carries categories → clean category-preserving move.
-- **Moxfield API is access-sensitive** (UA rules / restrictions) → **courtesy-check before shipping Moxfield URL import** (soft blocker, akin to commandersalt §2); paste-export is the always-works fallback.
+- **Moxfield** = ships **un-gated** (decided 2026-07-20) — pull the public deck JSON like Archidekt via the adapter; paste-export stays the graceful-degrade fallback.
 
 **Fidelity summary** — back up a deck → **JSON**; share to a pod → **text/Arena**; move from Archidekt → **URL or CSV** (categories intact).
 
-**Open items:** Moxfield URL courtesy-check (above); whether **Clone can target another user's *shared* deck** (lean: yes — clone-from-shared is the friend-sharing loop); merge-import dedupe (same card+printing+board → **sum quantities**, lean).
+**Decided (2026-07-20):** Moxfield URL import ships un-gated (above); **Clone can target another user's *shared* deck** (the friend-sharing loop); merge-import dedupe sums quantities on same card+printing+board.
 
 **Layout (wireframe — header + export/import):**
 
@@ -490,7 +488,7 @@ The one thing Archidekt/Moxfield don't do (they punt to EDHREC): **seed a card �
 
 **otag index mechanics** (recap §5) — a periodic job enumerates Scryfall's **tag catalog** (tag names obtained once from Tagger — soft dependency, refreshed occasionally), runs `otag:<tag>` through the search API (cached, throttled, like the nightly bulk sync), and stores card↔tag rows in **`otag_index`** (§6). Both directions become fast/offline; powers lane 6 v2 + the function dropdown.
 
-**Open items:** the curated **function list** (starter ≈ the template categories + common EDH functions — config, curatable); whether a result adds to a *specific* template column vs the deck's default bucket (lean: the seeding column when entered via the loop, else Uncategorized); in-lane ranking (lean: EDHREC popularity when available, else name/CMC).
+**Decided (2026-07-20):** a Synergy result is **always added into the category it belongs to** — never Uncategorized. When entered via a template column's fill-loop that's the seeding column; otherwise the card is placed by matching the synergy lane/function to the deck's category of the same function (fall back to a best-effort type/function match, but not "Uncategorized"). **Still open:** the curated **function list** (starter ≈ template categories + common EDH functions, config-curatable); in-lane ranking (lean: EDHREC popularity when available, else name/CMC).
 
 **Sequencing** *(per decision — light first)* — **wave 1:** the 5 free/offline lanes (a useful Synergy with zero new infra). **wave 2:** otag-function v1 (dropdown via live `otag:`), then the **otag-index job** → v2 chips. **wave 3:** Combos (Commander Spellbook) + EDHREC-similar. **wave 4:** Budget (after pricing §16). The template loop lights up as soon as lane 6 v1 exists.
 
@@ -543,7 +541,7 @@ Invite-only, **app-native** login (no Authentik) on public `vermilion.cooldad.to
 
 **Data-model touch-ups (§6):** `users` += `is_active`, `last_login_at`, `token_version`; `invites` `code` **is** the magic-link token += optional `note`; new **`password_resets`** (token, user_id, expires_at, used_at).
 
-**Open items:** cookie lifetime (lean 30d rolling); does deactivating a user kill live sessions immediately (lean: yes, via `token_version` bump); confirm the never-zero-admins guard on demote/deactivate.
+**Resolved (built):** cookie lifetime 30d rolling; deactivating a user kills live sessions immediately via a `token_version` bump; the never-zero-admins guard is enforced on demote/deactivate.
 
 **Layout (wireframe):**
 
@@ -565,7 +563,7 @@ Invite-only, **app-native** login (no Authentik) on public `vermilion.cooldad.to
 - **Pricing** — Scryfall `prices` + snapshot date + click-through + printing selection; price-source toggle. (User's gripe: listed prices drift from source — mitigate with snapshot date + verify link + exact-printing selection; a live vendor feed is a further step.)
 - **Synergy tab** (signature — **full spec §14**) — ship the 5 free/offline lanes first, then otag-function (v1 dropdown → v2 **otag-index job**), Combos, EDHREC-similar, Budget; wires the template-fill loop (§11).
 - **EDH Recs / Combos / Landbase** tabs.
-- **"Grade My Deck"** link-out to commandersalt (blocked on dev email).
+- ~~"Grade My Deck" link-out to commandersalt~~ — **CUT** (§5): commandersalt can't read vermilion decks (site allowlist).
 - **Auto-tagging** (archetype system-tags).
 - **DeckCheck "discover public decks"** (keyed, ToS-compliant, read-only).
 - Possibly **Redis** if Postgres caches need speed.
