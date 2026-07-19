@@ -9,6 +9,7 @@
 }
 
 .column {
+  /* 208px suits fanned card images (Stacks/Grid) */
   flex: 0 0 208px;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -17,6 +18,14 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+}
+
+/* List view is text — let columns grow into the available space so card
+   names don't truncate while the board sits empty. */
+.columnWide {
+  flex: 1 1 280px;
+  min-width: 280px;
+  max-width: 480px;
 }
 
 /* Column header (DESIGN §7.7) */
