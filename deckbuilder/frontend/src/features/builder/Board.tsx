@@ -3,6 +3,7 @@
  * rows in Stacks view (hover/focus expands the card), List and Grid views.
  * Empty category columns render as labelled wells (they exist deck-level).
  */
+import { useState } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
 import { GameCard } from "../../components/mtg/GameCard";
@@ -31,14 +32,16 @@ function RowMenu({
   deck,
   actions,
   className,
+  onOpenChange,
 }: {
   row: DeckCardRow;
   deck: DeckFull;
   actions: CardActions;
   className?: string;
+  onOpenChange?: (open: boolean) => void;
 }) {
   return (
-    <DropdownMenu.Root>
+    <DropdownMenu.Root onOpenChange={onOpenChange}>
       <DropdownMenu.Trigger asChild>
         <button
           type="button"
@@ -153,6 +156,67 @@ function QtyControls({
   );
 }
 
+/** Card tile (Stacks fan / Grid) — stays expanded while its ⋯ menu is open,
+ * so the menu never floats over a collapsed card. */
+function CardTile({
+  row,
+  deck,
+  actions,
+}: {
+  row: DeckCardRow;
+  deck: DeckFull;
+  actions: CardActions;
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  return (
+    <div
+      className={`${styles.fanRow} ${menuOpen ? styles.rowOpen : ""}`}
+      tabIndex={0}
+    >
+      <GameCard card={row.card} quantity={row.quantity} />
+      <div className={styles.rowControls}>
+        {canStep(deck, row) && (
+          <QtyControls
+            row={row}
+            allowIncrease={allowsMultiples(deck, row)}
+            actions={actions}
+          />
+        )}
+        <RowMenu row={row} deck={deck} actions={actions} onOpenChange={setMenuOpen} />
+      </div>
+    </div>
+  );
+}
+
+function ListRow({
+  row,
+  deck,
+  actions,
+}: {
+  row: DeckCardRow;
+  deck: DeckFull;
+  actions: CardActions;
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  return (
+    <div className={`${styles.listRow} ${menuOpen ? styles.rowOpen : ""}`}>
+      <span className={styles.listQty}>{row.quantity}</span>
+      <span className={styles.listName}>{row.card.name}</span>
+      <ManaCost cost={row.card.mana_cost} className={styles.listCost} />
+      <span className={styles.listControls}>
+        {canStep(deck, row) && (
+          <QtyControls
+            row={row}
+            allowIncrease={allowsMultiples(deck, row)}
+            actions={actions}
+          />
+        )}
+        <RowMenu row={row} deck={deck} actions={actions} onOpenChange={setMenuOpen} />
+      </span>
+    </div>
+  );
+}
+
 function ColumnHeader({ col }: { col: BoardColumn }) {
   const qty = columnQty(col);
   const hasRange = col.targetMin != null || col.targetMax != null;
@@ -201,45 +265,19 @@ export function Board({
           ) : view === "stacks" ? (
             <div className={styles.stack}>
               {col.rows.map((row) => (
-                <div key={row.id} className={styles.fanRow} tabIndex={0}>
-                  <GameCard card={row.card} quantity={row.quantity} />
-                  <div className={styles.rowControls}>
-                    {canStep(deck, row) && (
-                    <QtyControls row={row} allowIncrease={allowsMultiples(deck, row)} actions={actions} />
-                  )}
-                    <RowMenu row={row} deck={deck} actions={actions} />
-                  </div>
-                </div>
+                <CardTile key={row.id} row={row} deck={deck} actions={actions} />
               ))}
             </div>
           ) : view === "grid" ? (
             <div className={styles.gridWrap}>
               {col.rows.map((row) => (
-                <div key={row.id} className={styles.fanRow} tabIndex={0}>
-                  <GameCard card={row.card} quantity={row.quantity} />
-                  <div className={styles.rowControls}>
-                    {canStep(deck, row) && (
-                    <QtyControls row={row} allowIncrease={allowsMultiples(deck, row)} actions={actions} />
-                  )}
-                    <RowMenu row={row} deck={deck} actions={actions} />
-                  </div>
-                </div>
+                <CardTile key={row.id} row={row} deck={deck} actions={actions} />
               ))}
             </div>
           ) : (
             <div>
               {col.rows.map((row) => (
-                <div key={row.id} className={styles.listRow}>
-                  <span className={styles.listQty}>{row.quantity}</span>
-                  <span className={styles.listName}>{row.card.name}</span>
-                  <ManaCost cost={row.card.mana_cost} className={styles.listCost} />
-                  <span className={styles.listControls}>
-                    {canStep(deck, row) && (
-                    <QtyControls row={row} allowIncrease={allowsMultiples(deck, row)} actions={actions} />
-                  )}
-                    <RowMenu row={row} deck={deck} actions={actions} />
-                  </span>
-                </div>
+                <ListRow key={row.id} row={row} deck={deck} actions={actions} />
               ))}
             </div>
           )}

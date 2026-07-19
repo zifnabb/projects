@@ -86,19 +86,22 @@
   margin-bottom: 0;
 }
 .fanRow:hover,
-.fanRow:focus-within {
+.fanRow:focus-within,
+.fanRow.rowOpen {
   margin-bottom: var(--space-3);
   z-index: 2;
 }
 .fanRow:hover .rowControls,
-.fanRow:focus-within .rowControls {
+.fanRow:focus-within .rowControls,
+.fanRow.rowOpen .rowControls {
   opacity: 1;
   pointer-events: auto;
 }
 
 /* subtle ring on the hovered card so it reads as focused */
 .fanRow:hover > :first-child,
-.fanRow:focus-within > :first-child {
+.fanRow:focus-within > :first-child,
+.fanRow.rowOpen > :first-child {
   box-shadow: 0 0 0 2px var(--color-accent), var(--shadow-md);
 }
 
@@ -164,10 +167,12 @@
   font-size: 13px;
   position: relative;
 }
-.listRow:hover {
+.listRow:hover,
+.listRow.rowOpen {
   background: var(--color-surface-sunken);
 }
-.listRow:hover .listControls {
+.listRow:hover .listControls,
+.listRow.rowOpen .listControls {
   opacity: 1;
   pointer-events: auto;
 }
