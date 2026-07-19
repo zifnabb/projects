@@ -1,17 +1,34 @@
+import { useState } from "react";
+import { FlipHorizontal, Sparkles } from "lucide-react";
 import type { CardSummary } from "../../lib/types";
 import { ManaCost } from "./ManaCost";
 import styles from "./GameCard.module.css";
 
-/** Pick the best CDN image for a ~200-320px wide rendering. */
-export function cardImage(card: CardSummary | undefined): string | null {
-  const img = card?.image;
+function pickImage(img: Record<string, string> | undefined): string | null {
   if (!img) return null;
   return img.normal ?? img.large ?? img.small ?? img.png ?? null;
+}
+
+/** Pick the best CDN image for a ~200-320px wide rendering. Falls back to the
+ * front face for double-faced cards (their top-level image is null). */
+export function cardImage(card: CardSummary | undefined): string | null {
+  const top = pickImage(card?.image);
+  if (top) return top;
+  const faces = card?.faces;
+  if (faces && faces.length > 0) return pickImage(faces[0].image);
+  return null;
+}
+
+/** True for cards with two renderable faces (transform / modal_dfc / flip). */
+export function isDoubleFaced(card: CardSummary | undefined): boolean {
+  const faces = card?.faces;
+  return !!faces && faces.length >= 2 && !!pickImage(faces[0].image) && !!pickImage(faces[1].image);
 }
 
 /**
  * GameCard (DESIGN §7.6-1) — an actual MTG card. Image when available
  * (hotlinked from Scryfall CDN, PLAN §5), styled text fallback otherwise.
+ * Double-faced cards get a flip button; Game Changers get a corner label.
  */
 export function GameCard({
   card,
@@ -22,11 +39,15 @@ export function GameCard({
   quantity?: number;
   className?: string;
 }) {
-  const src = cardImage(card);
+  const [face, setFace] = useState(0);
+  const flippable = isDoubleFaced(card);
+  const src = flippable ? pickImage(card.faces![face].image) : cardImage(card);
+  const faceName = flippable ? card.faces![face].name : card.name;
+
   return (
     <div className={`${styles.frame} ${className ?? ""}`}>
       {src ? (
-        <img src={src} alt={card.name ?? "card"} loading="lazy" />
+        <img src={src} alt={faceName ?? "card"} loading="lazy" />
       ) : (
         <div className={styles.fallback}>
           <span className={styles.fallbackName}>
@@ -35,6 +56,29 @@ export function GameCard({
           <span className={styles.fallbackType}>{card.type_line}</span>
         </div>
       )}
+
+      {card.game_changer && (
+        <span className={styles.gameChanger} title="Commander Game Changer">
+          <Sparkles size={10} strokeWidth={2.5} aria-hidden="true" />
+          GC
+        </span>
+      )}
+
+      {flippable && (
+        <button
+          type="button"
+          className={styles.flipButton}
+          title={`Flip to ${card.faces![face === 0 ? 1 : 0].name ?? "other face"}`}
+          aria-label="Flip card"
+          onClick={(e) => {
+            e.stopPropagation();
+            setFace((f) => (f === 0 ? 1 : 0));
+          }}
+        >
+          <FlipHorizontal size={14} aria-hidden="true" />
+        </button>
+      )}
+
       {quantity != null && quantity > 1 && (
         <span className={styles.qtyBadge}>×{quantity}</span>
       )}

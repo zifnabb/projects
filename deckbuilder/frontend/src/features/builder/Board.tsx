@@ -189,16 +189,20 @@ function CardTile({
   row,
   deck,
   actions,
+  mode,
 }: {
   row: DeckCardRow;
   deck: DeckFull;
   actions: CardActions;
+  /** "fan" = Stacks overlap; "grid" = plain grid cell (no negative margin) */
+  mode: "fan" | "grid";
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const illegal = (row.issues?.length ?? 0) > 0;
+  const base = mode === "fan" ? styles.fanRow : styles.gridTile;
   return (
     <div
-      className={`${styles.fanRow} ${menuOpen ? styles.rowOpen : ""} ${illegal ? styles.rowIllegal : ""}`}
+      className={`${base} ${menuOpen ? styles.rowOpen : ""} ${illegal ? styles.rowIllegal : ""}`}
       tabIndex={0}
       role="button"
       title={illegal ? row.issues!.join(" · ") : undefined}
@@ -250,6 +254,11 @@ function ListRow({
     >
       <span className={styles.listQty}>{row.quantity}</span>
       <span className={styles.listName}>{row.card.name}</span>
+      {row.card.game_changer && (
+        <span className={styles.listGameChanger} title="Commander Game Changer">
+          GC
+        </span>
+      )}
       <ManaCost cost={row.card.mana_cost} className={styles.listCost} />
       <span className={styles.listControls} onClick={(e) => e.stopPropagation()}>
         {canStep(deck, row) && (
@@ -291,24 +300,28 @@ const BOARD_CLASS: Record<ViewAs, string> = {
   grid: "boardGrid",
 };
 
-/* ---- Stacks masonry: pack columns into the shortest lane ------------------ *
- * flex-wrap starts each row below the TALLEST column of the row above, which
- * leaves dead space under short columns. Instead we distribute columns into
- * fixed-width vertical lanes, always dropping the next column into the lane
- * that is currently shortest (estimated — every fan strip is the same height,
- * so row count is an accurate proxy). */
-const LANE_WIDTH = 208; // .lane flex-basis
+/* ---- Masonry: pack columns into the shortest lane ------------------------- *
+ * flex-wrap / CSS-grid start each new row below the TALLEST column of the row
+ * above, leaving dead space under short columns. Instead we distribute columns
+ * into fixed-width vertical lanes, always dropping the next column into the
+ * lane that is currently shortest. Used by both Stacks and List (Grid keeps its
+ * own full-width-sections layout). Height is estimated from row count. */
 const LANE_GAP = 12; // --space-5
 const BOARD_PAD = 16; // --space-6
 
-function estimateColumnHeight(col: BoardColumn): number {
-  const n = col.rows.length;
-  if (n === 0) return 110; // header + empty well
-  // header/padding ≈ 70, each fanned strip ≈ 40, bottom card shows full ≈ 291
-  return 70 + (n - 1) * 40 + 291;
-}
+/** Per-view lane geometry: fixed lane width + a column-height estimator. */
+const LANE_GEOM: Record<"stacks" | "list", { width: number; height: (n: number) => number }> = {
+  // fan strips ≈ 40px each; bottom card shows full ≈ 291px; header ≈ 70px
+  stacks: { width: 208, height: (n) => (n === 0 ? 110 : 70 + (n - 1) * 40 + 291) },
+  // list rows ≈ 38px each; header ≈ 60px; empty well ≈ 90px
+  list: { width: 320, height: (n) => (n === 0 ? 90 : 60 + n * 38) },
+};
 
-function packLanes(columns: BoardColumn[], laneCount: number): BoardColumn[][] {
+function packLanes(
+  columns: BoardColumn[],
+  laneCount: number,
+  estimate: (n: number) => number,
+): BoardColumn[][] {
   const lanes = Array.from({ length: laneCount }, () => ({
     height: 0,
     cols: [] as BoardColumn[],
@@ -316,33 +329,25 @@ function packLanes(columns: BoardColumn[], laneCount: number): BoardColumn[][] {
   for (const col of columns) {
     const lane = lanes.reduce((best, l) => (l.height < best.height ? l : best));
     lane.cols.push(col);
-    lane.height += estimateColumnHeight(col) + LANE_GAP;
+    lane.height += estimate(col.rows.length) + LANE_GAP;
   }
   return lanes.filter((l) => l.cols.length > 0).map((l) => l.cols);
 }
 
-function useLaneCount(ref: React.RefObject<HTMLDivElement | null>): number {
-  const [lanes, setLanes] = useState(() =>
-    Math.max(
-      1,
-      Math.floor((window.innerWidth - 2 * BOARD_PAD + LANE_GAP) / (LANE_WIDTH + LANE_GAP)),
-    ),
-  );
+function useLaneCount(ref: React.RefObject<HTMLDivElement | null>, laneWidth: number): number {
+  const measure = (w: number) =>
+    Math.max(1, Math.floor((w - 2 * BOARD_PAD + LANE_GAP) / (laneWidth + LANE_GAP)));
+  const [lanes, setLanes] = useState(() => measure(window.innerWidth));
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const update = () =>
-      setLanes(
-        Math.max(
-          1,
-          Math.floor((el.clientWidth - 2 * BOARD_PAD + LANE_GAP) / (LANE_WIDTH + LANE_GAP)),
-        ),
-      );
+    const update = () => setLanes(measure(el.clientWidth));
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [ref]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ref, laneWidth]);
   return lanes;
 }
 
@@ -403,13 +408,13 @@ function Column({
       ) : view === "stacks" ? (
         <div className={styles.stack}>
           {col.rows.map((row) => (
-            <CardTile key={row.id} row={row} deck={deck} actions={actions} />
+            <CardTile key={row.id} row={row} deck={deck} actions={actions} mode="fan" />
           ))}
         </div>
       ) : view === "grid" ? (
         <div className={styles.gridWrap}>
           {col.rows.map((row) => (
-            <CardTile key={row.id} row={row} deck={deck} actions={actions} />
+            <CardTile key={row.id} row={row} deck={deck} actions={actions} mode="grid" />
           ))}
         </div>
       ) : (
@@ -436,14 +441,19 @@ export function Board({
   view: ViewAs;
   actions: CardActions;
 }) {
+  const masonry = view === "stacks" || view === "list";
+  const geom = masonry ? LANE_GEOM[view as "stacks" | "list"] : LANE_GEOM.stacks;
   const wrapRef = useRef<HTMLDivElement>(null);
-  const laneCount = useLaneCount(wrapRef);
+  const laneCount = useLaneCount(wrapRef, geom.width);
 
-  if (view === "stacks") {
+  if (masonry) {
     return (
-      <div className={styles.boardStacks} ref={wrapRef}>
-        {packLanes(columns, laneCount).map((laneCols, i) => (
-          <div key={i} className={styles.lane}>
+      <div className={styles[BOARD_CLASS[view]]} ref={wrapRef}>
+        {packLanes(columns, laneCount, geom.height).map((laneCols, i) => (
+          <div
+            key={i}
+            className={view === "stacks" ? styles.lane : styles.listLane}
+          >
             {laneCols.map((col) => (
               <Column
                 key={col.key}

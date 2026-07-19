@@ -1,5 +1,5 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { LogOut, Moon, Plus, Settings, Shield, Sun } from "lucide-react";
+import { LayoutGrid, LogOut, Moon, Plus, Settings, Shield, Sun } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "../ui/Button";
@@ -41,6 +41,13 @@ export function TopBar({
       <Link to="/" className={styles.brandLink} aria-label="Home">
         <Wordmark size="sm" />
       </Link>
+
+      <Button variant="ghost" size="sm" asChild>
+        <Link to="/">
+          <LayoutGrid size={15} aria-hidden="true" />
+          Your decks
+        </Link>
+      </Button>
 
       <span className={styles.spacer} />
       <UnifiedSearch onOpenCard={onOpenCard} />

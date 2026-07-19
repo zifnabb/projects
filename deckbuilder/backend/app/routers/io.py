@@ -3,9 +3,8 @@
 Export: plain text · MTG Arena · full-fidelity JSON.
 Import: two-phase — /parse (auto-detect text/Arena/CSV/JSON/Archidekt-URL,
 fuzzy-resolve against local cards, return a review payload) then /commit
-(new | add | replace). Archidekt URL pull goes through the shared adapter
-(fragile, graceful-degrade → caller falls back to paste). Moxfield URL import
-is deliberately absent (courtesy-check blocker, PLAN §2).
+(new | add | replace). Archidekt + Moxfield URL pulls go through the shared
+adapter (fragile, graceful-degrade → caller falls back to paste).
 """
 
 import csv
@@ -31,6 +30,7 @@ from app.routers.decks import (
     _refresh_deck_state,
     _serialize_full,
 )
+from app.scryfall.search import _playable
 
 log = logging.getLogger("io")
 router = APIRouter(prefix="/api/io", tags=["io"])
@@ -324,6 +324,72 @@ async def _parse_archidekt(url: str) -> tuple[list[ParsedLine], dict]:
     return lines, meta
 
 
+MOXFIELD_URL_RE = re.compile(r"moxfield\.com/decks/([A-Za-z0-9_-]+)")
+# Moxfield board key -> our board (commanders live in the command zone)
+_MOXFIELD_BOARDS = {
+    "commanders": "command",
+    "mainboard": "main",
+    "sideboard": "side",
+    "maybeboard": "maybe",
+}
+
+
+async def _parse_moxfield(url: str) -> tuple[list[ParsedLine], dict]:
+    m = MOXFIELD_URL_RE.search(url)
+    if not m:
+        raise HTTPException(status_code=400, detail="not a Moxfield deck URL")
+    api_url = f"https://api.moxfield.com/v2/decks/all/{m.group(1)}"
+    try:
+        data = await fetch_json("moxfield", api_url, ttl=300)
+    except ThirdPartyError:
+        raise HTTPException(
+            status_code=502,
+            detail="couldn't reach Moxfield — paste the deck's text or CSV export instead",
+        )
+    lines: list[ParsedLine] = []
+    for board_key, board in _MOXFIELD_BOARDS.items():
+        entries = data.get(board_key) or {}
+        for name, entry in entries.items():
+            qty = int(entry.get("quantity", 1))
+            card = entry.get("card") or {}
+            # Moxfield groups cards under user-named columns via `tags`/no
+            # native category on the basic payload; leave uncategorized.
+            set_code = card.get("set")
+            lines.append(
+                ParsedLine(
+                    input=f"{qty} {name}",
+                    name=name,
+                    quantity=qty,
+                    board=board,
+                    set_code=set_code.lower() if set_code else None,
+                    collector_number=str(card.get("cn") or "") or None,
+                )
+            )
+    # adapter returns 4xx JSON bodies (e.g. a 404 for a missing/private deck)
+    # instead of raising, so an empty result means "not a readable deck".
+    if not lines:
+        raise HTTPException(
+            status_code=502,
+            detail="couldn't read that Moxfield deck (private or not found) — "
+            "paste the deck's text or CSV export instead",
+        )
+    fmt = (data.get("format") or "commander").lower()
+    if fmt not in FORMATS:
+        fmt = "commander"
+    return lines, {"deck_name": data.get("name"), "format": fmt, "categories": []}
+
+
+async def _parse_url(url: str) -> tuple[list[ParsedLine], dict]:
+    if MOXFIELD_URL_RE.search(url):
+        return await _parse_moxfield(url)
+    if ARCHIDEKT_URL_RE.search(url):
+        return await _parse_archidekt(url)
+    raise HTTPException(
+        status_code=400,
+        detail="unsupported deck URL — use an Archidekt or Moxfield deck link, or paste the list",
+    )
+
+
 async def _resolve(session: AsyncSession, lines: list[ParsedLine]) -> list[dict]:
     """Fuzzy-match parsed names to local cards (exact → trigram, PLAN §13)."""
     out = []
@@ -331,11 +397,18 @@ async def _resolve(session: AsyncSession, lines: list[ParsedLine]) -> list[dict]
     for line in lines:
         key = line.name.lower()
         if key not in cache:
-            card = await session.scalar(select(Card).where(func.lower(Card.name) == key))
+            # _playable + edhrec order: when a name collides (e.g. "Savage
+            # Lands" — a real Land AND a Jumpstart front-card token), never
+            # resolve to the non-playable token; prefer the mainstream card.
+            card = await session.scalar(
+                _playable(select(Card).where(func.lower(Card.name) == key))
+                .order_by(Card.edhrec_rank.asc().nullslast())
+            )
             if card is None:
                 # front face of split/DFC names ("A // B" ↔ "A")
                 card = await session.scalar(
-                    select(Card).where(func.lower(Card.name).like(f"{key} // %"))
+                    _playable(select(Card).where(func.lower(Card.name).like(f"{key} // %")))
+                    .order_by(Card.edhrec_rank.asc().nullslast())
                 )
             if card is not None:
                 cache[key] = (card.oracle_id, card.name, False)
@@ -343,7 +416,8 @@ async def _resolve(session: AsyncSession, lines: list[ParsedLine]) -> list[dict]
                 sim = func.similarity(func.lower(Card.name), key)
                 row = (
                     await session.execute(
-                        select(Card, sim).where(sim > 0.55).order_by(sim.desc()).limit(1)
+                        _playable(select(Card, sim).where(sim > 0.55))
+                        .order_by(sim.desc()).limit(1)
                     )
                 ).first()
                 if row:
@@ -375,7 +449,7 @@ async def import_parse(
 ) -> dict:
     meta: dict = {}
     if body.url:
-        lines, meta = await _parse_archidekt(body.url)
+        lines, meta = await _parse_url(body.url)
     elif body.text and body.text.strip():
         text = body.text.strip()
         parsed = _parse_our_json(text)

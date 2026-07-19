@@ -42,7 +42,7 @@ export function NewDeckModal({
   const [commander, setCommander] = useState<AutocompleteResult | null>(null);
   const [commanderQuery, setCommanderQuery] = useState("");
   const [legalOnly, setLegalOnly] = useState(true);
-  const [useTemplate, setUseTemplate] = useState(true);
+  const [useTemplate, setUseTemplate] = useState(false);
   const [visibility, setVisibility] = useState<"private" | "shared">("private");
   const nameTouched = useRef(false);
 
@@ -89,7 +89,7 @@ export function NewDeckModal({
     setCommander(null);
     setCommanderQuery("");
     setLegalOnly(true);
-    setUseTemplate(true);
+    setUseTemplate(false);
     setVisibility("private");
     nameTouched.current = false;
   }
@@ -248,7 +248,7 @@ export function NewDeckModal({
               </div>
             )}
 
-            {/* Template toggle (default ON) + bucket preview */}
+            {/* Template toggle (default OFF, 2026-07-20) + bucket preview */}
             {template && (
               <div>
                 <div className={styles.toggleRow}>

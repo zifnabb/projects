@@ -36,9 +36,52 @@
   color: var(--color-text-muted);
 }
 
-.qtyBadge {
+/* Game Changer badge — top-left, always visible (incl. the Stacks fan strip,
+   which only reveals the top of each card). */
+.gameChanger {
   position: absolute;
   top: 4%;
+  left: 3%;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background: rgba(232, 85, 46, 0.95); /* vermilion accent */
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Flip button for double-faced cards */
+.flipButton {
+  position: absolute;
+  top: 4%;
+  right: 3%;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-full);
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  cursor: pointer;
+  z-index: 4;
+}
+.flipButton:hover {
+  background: rgba(0, 0, 0, 0.9);
+}
+
+/* Qty badge — bottom-left, so it never collides with the Game Changer badge
+   (in singleton commander decks qty is always 1 and this never shows anyway). */
+.qtyBadge {
+  position: absolute;
+  bottom: 4%;
   left: 3%;
   min-width: 22px;
   height: 20px;

@@ -73,6 +73,14 @@ export interface DeckCategoryOut {
   source: "template" | "user";
 }
 
+export interface CardFace {
+  name?: string;
+  image?: Record<string, string>;
+  mana_cost?: string | null;
+  type_line?: string | null;
+  oracle_text?: string | null;
+}
+
 export interface CardSummary {
   name?: string;
   mana_cost?: string | null;
@@ -80,6 +88,12 @@ export interface CardSummary {
   type_line?: string | null;
   color_identity?: ColorLetter[];
   image?: Record<string, string>;
+  /** double-faced cards (transform/modal_dfc/flip): per-face name + image */
+  faces?: CardFace[] | null;
+  layout?: string | null;
+  keywords?: string[] | null;
+  /** WotC Commander Game Changer (per-card label) */
+  game_changer?: boolean;
   /** singleton formats: only basics / "any number" cards may exceed 1 */
   multiples_ok?: boolean;
   /** mana this card can produce (stats sidebar; e.g. ["G"], ["C"]) */

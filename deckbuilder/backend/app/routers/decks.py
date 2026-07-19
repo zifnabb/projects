@@ -14,7 +14,8 @@ from app.auth.deps import get_current_user
 from app.db import get_session
 from app.deck_templates import template_for_format
 from app.formats import DEFAULT_FORMAT, FORMATS, allows_any_number, get_format, validate_deck
-from app.models import Card, Deck, DeckCard, DeckCategory, DeckTag, User
+from app.game_changers import GAME_CHANGER_ORACLE_IDS
+from app.models import Card, Deck, DeckCard, DeckCategory, DeckTag, Printing, User
 from app.naming import random_deck_name
 
 router = APIRouter(prefix="/api", tags=["decks"])
@@ -135,16 +136,48 @@ async def _apply_commander(session: AsyncSession, deck: Deck, oracle_id: str | N
         session.add(DeckCard(deck_id=deck.id, oracle_id=oracle_id, board="command", quantity=1))
 
 
-def _card_summary(card: Card | None) -> dict:
+def _face_summaries(card: Card) -> list[dict] | None:
+    """Per-face name + image for double-faced cards (transform / modal_dfc /
+    flip …). Top-level `image_uris` is null on these, so the board must read
+    face images or it renders blank. None for single-faced cards."""
+    faces = card.card_faces
+    if not faces or len(faces) < 2:
+        return None
+    out = []
+    for f in faces:
+        out.append(
+            {
+                "name": f.get("name"),
+                "image": f.get("image_uris") or {},
+                "mana_cost": f.get("mana_cost"),
+                "type_line": f.get("type_line"),
+                "oracle_text": f.get("oracle_text"),
+            }
+        )
+    return out
+
+
+def _card_summary(card: Card | None, printing: Printing | None = None) -> dict:
     if card is None:
         return {}
+    faces = _face_summaries(card)
+    # image precedence: selected printing → card default → front face (MDFC)
+    image = (printing.image_uris if printing else None) or card.image_uris or {}
+    if not image and faces:
+        image = faces[0]["image"]
     return {
         "name": card.name,
         "mana_cost": card.mana_cost,
         "cmc": card.cmc,
         "type_line": card.type_line,
         "color_identity": card.color_identity,
-        "image": card.image_uris or {},
+        "image": image or {},
+        # double-faced cards: face images so the board can render + flip
+        "faces": faces,
+        "layout": card.layout,
+        "keywords": card.keywords,
+        # WotC Commander Game Changer (per-card label, PLAN §11)
+        "game_changer": card.oracle_id in GAME_CHANGER_ORACLE_IDS,
         # singleton formats: only these cards may exceed quantity 1
         "multiples_ok": allows_any_number(card),
         # stats sidebar inputs (color cost & production, PLAN §11)
@@ -186,6 +219,17 @@ async def _serialize_full(session: AsyncSession, deck: Deck) -> dict:
     cmap = await _card_map(session, ids)
     legality = validate_deck(deck.format, deck, cmap, cards)
     fmt = get_format(deck.format)
+
+    # selected-printing images so the board reflects the chosen art (PLAN §9)
+    printing_ids = {dc.printing_id for dc in cards if dc.printing_id}
+    pmap: dict[str, Printing] = {}
+    if printing_ids:
+        pmap = {
+            p.id: p
+            for p in (
+                await session.execute(select(Printing).where(Printing.id.in_(printing_ids)))
+            ).scalars().all()
+        }
 
     cats = (
         await session.execute(
@@ -229,7 +273,10 @@ async def _serialize_full(session: AsyncSession, deck: Deck) -> dict:
                 "printing_id": dc.printing_id,
                 "finish": dc.finish,
                 "category_id": dc.category_id,
-                "card": _card_summary(cmap.get(dc.oracle_id)),
+                "card": _card_summary(
+                    cmap.get(dc.oracle_id),
+                    pmap.get(dc.printing_id) if dc.printing_id else None,
+                ),
                 "issues": _card_issues(deck, fmt, dc, cmap.get(dc.oracle_id)),
             }
             for dc in cards

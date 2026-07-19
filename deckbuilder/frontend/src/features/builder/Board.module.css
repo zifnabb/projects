@@ -21,12 +21,20 @@
   min-width: 0;
 }
 
+/* List = masonry lanes (like Stacks), columns pack into the shortest lane. */
 .boardList {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  align-items: start;
+  display: flex;
+  align-items: flex-start;
   gap: var(--space-5);
   padding: var(--space-6);
+}
+.listLane {
+  flex: 1 1 320px;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
 }
 
 .boardGrid {
@@ -110,6 +118,26 @@
 .fanRow:focus-within > :first-child,
 .fanRow.rowOpen > :first-child {
   box-shadow: 0 0 0 2px var(--color-accent), var(--shadow-md);
+}
+
+/* ---- Grid view tile: a plain grid cell (no fan overlap) ------------------ */
+.gridTile {
+  position: relative;
+  cursor: pointer;
+}
+.gridTile:hover > :first-child,
+.gridTile:focus-within > :first-child,
+.gridTile.rowOpen > :first-child {
+  box-shadow: 0 0 0 2px var(--color-accent), var(--shadow-md);
+}
+.gridTile:hover .rowControls,
+.gridTile:focus-within .rowControls,
+.gridTile.rowOpen .rowControls {
+  opacity: 1;
+  pointer-events: auto;
+}
+.gridTile.rowIllegal > :first-child {
+  box-shadow: 0 0 0 2px var(--color-warning);
 }
 
 /* drag-and-drop target feedback */
@@ -216,6 +244,16 @@
 .listCost {
   flex-shrink: 0;
   font-size: 11px;
+}
+.listGameChanger {
+  flex-shrink: 0;
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 .listControls {
   display: flex;

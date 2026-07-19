@@ -140,7 +140,7 @@ export function ImportModal({
                 <span className={styles.orText}>or pull from a URL</span>
                 <input
                   className={styles.input}
-                  placeholder="https://archidekt.com/decks/…"
+                  placeholder="Archidekt or Moxfield deck URL…"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                 />
