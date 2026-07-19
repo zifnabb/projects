@@ -231,7 +231,7 @@ export function SearchPanel({
                 />
               </div>
               <div>
-                <label className={styles.fieldLabel}>Mode</label>
+                <label className={styles.fieldLabel}>Identity match</label>
                 <select
                   className={styles.select}
                   style={{ width: "100%" }}
@@ -244,9 +244,9 @@ export function SearchPanel({
                     })
                   }
                 >
-                  <option value="at-most">At most</option>
-                  <option value="including">Including</option>
-                  <option value="exactly">Exactly</option>
+                  <option value="at-most">Fits in these colors</option>
+                  <option value="including">Uses all of these</option>
+                  <option value="exactly">Exactly these</option>
                 </select>
               </div>
             </div>
