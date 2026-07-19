@@ -1,14 +1,24 @@
 /* The board (DESIGN §6.3). Each view has its own geometry:
-   Stacks = card-width columns wrapping DOWN the page (Commander first);
+   Stacks = masonry lanes — columns pack into the shortest lane (Board.tsx),
+            so wrapped categories tuck up under short columns;
    List   = group blocks in a responsive grid wrapping DOWN the page;
    Grid   = full-width group sections, card images wrap inside each. */
 .boardStacks {
   display: flex;
-  flex-wrap: wrap;
   align-items: flex-start;
   gap: var(--space-5);
   padding: var(--space-6);
   min-height: 60vh;
+}
+
+/* one masonry lane: fixed card width, columns stacked with even gaps.
+   Width must stay in sync with LANE_WIDTH/LANE_GAP in Board.tsx. */
+.lane {
+  flex: 0 0 208px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
 }
 
 .boardList {
@@ -36,10 +46,6 @@
   gap: var(--space-4);
 }
 
-/* Stacks: fixed width tuned to fanned card images. */
-.boardStacks .column {
-  flex: 0 0 208px;
-}
 
 /* Column header (DESIGN §7.7) */
 .colHeader {

@@ -3,7 +3,7 @@
  * rows in Stacks view (hover/focus expands the card), List and Grid views.
  * Empty category columns render as labelled wells (they exist deck-level).
  */
-import { useState, type DragEvent } from "react";
+import { useEffect, useRef, useState, type DragEvent } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
 import { GameCard } from "../../components/mtg/GameCard";
@@ -291,6 +291,61 @@ const BOARD_CLASS: Record<ViewAs, string> = {
   grid: "boardGrid",
 };
 
+/* ---- Stacks masonry: pack columns into the shortest lane ------------------ *
+ * flex-wrap starts each row below the TALLEST column of the row above, which
+ * leaves dead space under short columns. Instead we distribute columns into
+ * fixed-width vertical lanes, always dropping the next column into the lane
+ * that is currently shortest (estimated — every fan strip is the same height,
+ * so row count is an accurate proxy). */
+const LANE_WIDTH = 208; // .lane flex-basis
+const LANE_GAP = 12; // --space-5
+const BOARD_PAD = 16; // --space-6
+
+function estimateColumnHeight(col: BoardColumn): number {
+  const n = col.rows.length;
+  if (n === 0) return 110; // header + empty well
+  // header/padding ≈ 70, each fanned strip ≈ 40, bottom card shows full ≈ 291
+  return 70 + (n - 1) * 40 + 291;
+}
+
+function packLanes(columns: BoardColumn[], laneCount: number): BoardColumn[][] {
+  const lanes = Array.from({ length: laneCount }, () => ({
+    height: 0,
+    cols: [] as BoardColumn[],
+  }));
+  for (const col of columns) {
+    const lane = lanes.reduce((best, l) => (l.height < best.height ? l : best));
+    lane.cols.push(col);
+    lane.height += estimateColumnHeight(col) + LANE_GAP;
+  }
+  return lanes.filter((l) => l.cols.length > 0).map((l) => l.cols);
+}
+
+function useLaneCount(ref: React.RefObject<HTMLDivElement | null>): number {
+  const [lanes, setLanes] = useState(() =>
+    Math.max(
+      1,
+      Math.floor((window.innerWidth - 2 * BOARD_PAD + LANE_GAP) / (LANE_WIDTH + LANE_GAP)),
+    ),
+  );
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () =>
+      setLanes(
+        Math.max(
+          1,
+          Math.floor((el.clientWidth - 2 * BOARD_PAD + LANE_GAP) / (LANE_WIDTH + LANE_GAP)),
+        ),
+      );
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [ref]);
+  return lanes;
+}
+
 /** One board column — a drop target when the grouping gives the drop a
  * meaning (category columns, boards). */
 function Column({
@@ -381,6 +436,30 @@ export function Board({
   view: ViewAs;
   actions: CardActions;
 }) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const laneCount = useLaneCount(wrapRef);
+
+  if (view === "stacks") {
+    return (
+      <div className={styles.boardStacks} ref={wrapRef}>
+        {packLanes(columns, laneCount).map((laneCols, i) => (
+          <div key={i} className={styles.lane}>
+            {laneCols.map((col) => (
+              <Column
+                key={col.key}
+                col={col}
+                group={group}
+                deck={deck}
+                view={view}
+                actions={actions}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className={styles[BOARD_CLASS[view]]}>
       {columns.map((col) => (
