@@ -35,12 +35,12 @@ export function useFormats() {
 }
 
 /** Debounce-friendly card autocomplete (local pg_trgm, cheap). */
-export function useAutocomplete(q: string, commandersOnly = false) {
+export function useAutocomplete(q: string, commandersOnly = false, limit = 15) {
   return useQuery({
-    queryKey: ["autocomplete", q, commandersOnly],
+    queryKey: ["autocomplete", q, commandersOnly, limit],
     queryFn: () =>
       api.get<{ results: AutocompleteResult[] }>(
-        `/api/search/autocomplete?q=${encodeURIComponent(q)}&commanders_only=${commandersOnly}`,
+        `/api/search/autocomplete?q=${encodeURIComponent(q)}&commanders_only=${commandersOnly}&limit=${limit}`,
       ),
     enabled: q.trim().length >= 2,
     staleTime: 10 * 60 * 1000,

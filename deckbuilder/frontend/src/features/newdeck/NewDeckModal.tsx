@@ -58,7 +58,8 @@ export function NewDeckModal({
   const suggested = randomName.data?.name ?? "";
 
   const debouncedQuery = useDebounced(commanderQuery);
-  const autocomplete = useAutocomplete(debouncedQuery, legalOnly);
+  // 7 rows fit the dropdown without an internal scrollbar
+  const autocomplete = useAutocomplete(debouncedQuery, legalOnly, 7);
 
   const fmt = catalog?.formats[format];
   const showCommander = fmt?.requires_commander ?? format === "commander";
