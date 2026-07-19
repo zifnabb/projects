@@ -151,7 +151,9 @@ def _sync_kind(kind: str, model, mapper: Callable[[dict], dict | None], key: str
         with Session(_engine) as session:
             batch: list[dict] = []
             with open(path, "rb") as f:
-                for obj in ijson.items(f, "item"):
+                # use_float: ijson defaults to Decimal for numbers, which is not
+                # JSON-serializable into JSONB columns (card_faces embeds numerics)
+                for obj in ijson.items(f, "item", use_float=True):
                     row = mapper(obj)
                     if row is None:
                         continue
