@@ -122,6 +122,7 @@ def _printing_row(o: dict) -> dict | None:
         "rarity": o.get("rarity"),
         "finishes": o.get("finishes"),
         "image_uris": imgs,
+        "card_faces": o.get("card_faces"),  # per-printing faces (DFC art)
         "released_at": dt.date.fromisoformat(released) if released else None,
         "artist": o.get("artist"),
         "lang": o.get("lang", "en"),

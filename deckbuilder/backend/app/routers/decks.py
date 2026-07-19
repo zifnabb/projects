@@ -136,11 +136,10 @@ async def _apply_commander(session: AsyncSession, deck: Deck, oracle_id: str | N
         session.add(DeckCard(deck_id=deck.id, oracle_id=oracle_id, board="command", quantity=1))
 
 
-def _face_summaries(card: Card) -> list[dict] | None:
+def _face_summaries(faces: list | None) -> list[dict] | None:
     """Per-face name + image for double-faced cards (transform / modal_dfc /
     flip …). Top-level `image_uris` is null on these, so the board must read
     face images or it renders blank. None for single-faced cards."""
-    faces = card.card_faces
     if not faces or len(faces) < 2:
         return None
     out = []
@@ -160,7 +159,13 @@ def _face_summaries(card: Card) -> list[dict] | None:
 def _card_summary(card: Card | None, printing: Printing | None = None) -> dict:
     if card is None:
         return {}
-    faces = _face_summaries(card)
+    # both faces follow the selected printing when it carries per-face art;
+    # otherwise the oracle (default-printing) faces.
+    faces = None
+    if printing is not None:
+        faces = _face_summaries(printing.card_faces)
+    if faces is None:
+        faces = _face_summaries(card.card_faces)
     # image precedence: selected printing → card default → front face (MDFC)
     image = (printing.image_uris if printing else None) or card.image_uris or {}
     if not image and faces:

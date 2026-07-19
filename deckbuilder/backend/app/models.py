@@ -64,6 +64,7 @@ class Printing(Base):
     rarity: Mapped[str | None] = mapped_column(String(16))
     finishes: Mapped[list[str] | None] = mapped_column(ARRAY(Text))
     image_uris: Mapped[dict | None] = mapped_column(JSONB)
+    card_faces: Mapped[list | None] = mapped_column(JSONB)  # per-printing DFC faces
     released_at: Mapped[date | None] = mapped_column(Date)
     artist: Mapped[str | None] = mapped_column(Text)
     lang: Mapped[str] = mapped_column(String(8), nullable=False, default="en")
