@@ -41,7 +41,13 @@ export function GameCard({
 }) {
   const [face, setFace] = useState(0);
   const flippable = isDoubleFaced(card);
-  const src = flippable ? pickImage(card.faces![face].image) : cardImage(card);
+  // front face uses the printing-aware image (card.image reflects the selected
+  // printing); the back face uses the oracle face art (no per-printing back art
+  // in the summary). Non-flippable cards just use the printing-aware image.
+  const src =
+    flippable && face === 1
+      ? pickImage(card.faces![1].image)
+      : cardImage(card);
   const faceName = flippable ? card.faces![face].name : card.name;
 
   return (
