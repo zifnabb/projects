@@ -212,9 +212,12 @@
   gap: var(--space-4);
 }
 
-/* ⋯ menu (shared with column menus) */
+/* ⋯ menu (shared with column menus) — opens beside the card so the card
+   stays visible; never taller than the viewport (scrolls instead). */
 .menuContent {
   min-width: 180px;
+  max-height: var(--radix-dropdown-menu-content-available-height);
+  overflow-y: auto;
   background: var(--color-surface-raised);
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-lg);

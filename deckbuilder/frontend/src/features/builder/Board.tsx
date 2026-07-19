@@ -49,7 +49,13 @@ function RowMenu({
         </button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
-        <DropdownMenu.Content className={styles.menuContent} sideOffset={6}>
+        <DropdownMenu.Content
+          className={styles.menuContent}
+          side="right"
+          align="start"
+          sideOffset={8}
+          collisionPadding={12}
+        >
           {deck.categories.length > 0 && (
             <>
               <div className={styles.menuLabel}>Category</div>
