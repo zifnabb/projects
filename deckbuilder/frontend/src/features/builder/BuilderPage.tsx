@@ -88,6 +88,10 @@ export function BuilderPage() {
     deck.format_info.enforce_color_identity && deck.commander_oracle_id
       ? deck.color_identity.join("")
       : undefined;
+  // …and only surfaces cards legal in the deck's format (drops playtest/
+  // banned cards). Freeform has no restrictions — and no Scryfall legality
+  // key — so it gets no filter.
+  const quickAddFormat = deck.format === "freeform" ? undefined : deck.format;
   const searchOpen = params.get("search") === "1";
   const statsOpen = params.get("stats") === "1";
   const view = (params.get("view") as ViewAs) || "stacks";
@@ -161,6 +165,7 @@ export function BuilderPage() {
         searchOpen={searchOpen}
         statsOpen={statsOpen}
         identity={quickAddIdentity}
+        formatLegal={quickAddFormat}
         onView={(v) => setParam("view", v)}
         onGroup={(g) => setParam("group", g)}
         onSort={(s) => setParam("sort", s)}

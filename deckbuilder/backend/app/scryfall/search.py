@@ -86,6 +86,7 @@ async def autocomplete(
     *,
     commanders_only: bool = False,
     identity: str | None = None,
+    format_legal: str | None = None,
 ) -> list[dict]:
     q = q.strip()
     if not q:
@@ -112,6 +113,12 @@ async def autocomplete(
             stmt = stmt.where(Card.color_identity.contained_by(letters))
         else:
             stmt = stmt.where(func.cardinality(Card.color_identity) == 0)
+    if format_legal:
+        # only cards playable in this format — drops playtest/joke cards
+        # (all legalities not_legal) and banned cards from quick-add
+        stmt = stmt.where(
+            Card.legalities[format_legal].astext.in_(("legal", "restricted"))
+        )
     if commanders_only:
         # valid commanders, commander-legal (the picker's "legal only" toggle)
         stmt = stmt.where(

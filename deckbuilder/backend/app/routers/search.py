@@ -25,11 +25,17 @@ async def autocomplete(
     limit: int = Query(15, ge=1, le=50),
     commanders_only: bool = Query(False),
     identity: str | None = Query(None, description="WUBRG letters; results must fit inside ('' = colorless)"),
+    format_legal: str | None = Query(None, description="format key; only legal/restricted cards returned"),
     session: AsyncSession = Depends(get_session),
 ) -> dict:
     return {
         "results": await sf.autocomplete(
-            session, q, limit, commanders_only=commanders_only, identity=identity
+            session,
+            q,
+            limit,
+            commanders_only=commanders_only,
+            identity=identity,
+            format_legal=format_legal,
         )
     }
 

@@ -145,20 +145,25 @@ export function useFormats() {
 
 /** Debounce-friendly card autocomplete (local pg_trgm, cheap).
  * `identity` (WUBRG letters, "" = colorless) restricts results to cards that
- * fit inside that color identity — used by the builder's quick-add. */
+ * fit inside that color identity; `formatLegal` (format key) drops cards not
+ * legal there (playtest/joke/banned) — both used by the builder's quick-add. */
 export function useAutocomplete(
   q: string,
   commandersOnly = false,
   limit = 15,
   identity?: string,
+  formatLegal?: string,
 ) {
   const identityParam =
     identity !== undefined ? `&identity=${encodeURIComponent(identity)}` : "";
+  const formatParam = formatLegal
+    ? `&format_legal=${encodeURIComponent(formatLegal)}`
+    : "";
   return useQuery({
-    queryKey: ["autocomplete", q, commandersOnly, limit, identity ?? null],
+    queryKey: ["autocomplete", q, commandersOnly, limit, identity ?? null, formatLegal ?? null],
     queryFn: () =>
       api.get<{ results: AutocompleteResult[] }>(
-        `/api/search/autocomplete?q=${encodeURIComponent(q)}&commanders_only=${commandersOnly}&limit=${limit}${identityParam}`,
+        `/api/search/autocomplete?q=${encodeURIComponent(q)}&commanders_only=${commandersOnly}&limit=${limit}${identityParam}${formatParam}`,
       ),
     enabled: q.trim().length >= 2,
     staleTime: 10 * 60 * 1000,

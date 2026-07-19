@@ -24,16 +24,19 @@ function useDebounced(value: string, ms = 180): string {
 function QuickAdd({
   onAdd,
   identity,
+  formatLegal,
 }: {
   onAdd: (card: AutocompleteResult) => void;
   /** WUBRG letters ("" = colorless): restrict results to the deck's identity */
   identity?: string;
+  /** format key: only surface cards legal there (no playtest/banned cards) */
+  formatLegal?: string;
 }) {
   const [q, setQ] = useState("");
   const [active, setActive] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounced = useDebounced(q);
-  const { data } = useAutocomplete(debounced, false, 7, identity);
+  const { data } = useAutocomplete(debounced, false, 7, identity, formatLegal);
   const results = q.trim().length >= 2 ? (data?.results ?? []) : [];
 
   // Cmd+' focuses quick-add (PLAN §11)
@@ -117,6 +120,7 @@ export function Toolbar({
   searchOpen,
   statsOpen,
   identity,
+  formatLegal,
   onView,
   onGroup,
   onSort,
@@ -133,6 +137,8 @@ export function Toolbar({
   statsOpen: boolean;
   /** deck color identity for quick-add filtering (undefined = no filter) */
   identity?: string;
+  /** deck format for quick-add legality filtering (undefined = no filter) */
+  formatLegal?: string;
   onView: (v: ViewAs) => void;
   onGroup: (g: GroupBy) => void;
   onSort: (s: SortBy) => void;
@@ -157,7 +163,7 @@ export function Toolbar({
 
       <div className={styles.group}>
         <span className={styles.groupLabel}>Add card</span>
-        <QuickAdd onAdd={onAdd} identity={identity} />
+        <QuickAdd onAdd={onAdd} identity={identity} formatLegal={formatLegal} />
       </div>
 
       <div className={styles.group}>
