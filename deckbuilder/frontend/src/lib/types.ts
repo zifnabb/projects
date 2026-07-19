@@ -80,6 +80,8 @@ export interface CardSummary {
   type_line?: string | null;
   color_identity?: ColorLetter[];
   image?: Record<string, string>;
+  /** singleton formats: only basics / "any number" cards may exceed 1 */
+  multiples_ok?: boolean;
 }
 
 export interface DeckCardRow {

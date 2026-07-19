@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.deps import get_current_user
 from app.db import get_session
 from app.deck_templates import template_for_format
-from app.formats import DEFAULT_FORMAT, FORMATS, get_format, validate_deck
+from app.formats import DEFAULT_FORMAT, FORMATS, allows_any_number, get_format, validate_deck
 from app.models import Card, Deck, DeckCard, DeckCategory, DeckTag, User
 from app.naming import random_deck_name
 
@@ -141,6 +141,8 @@ def _card_summary(card: Card | None) -> dict:
         "type_line": card.type_line,
         "color_identity": card.color_identity,
         "image": card.image_uris or {},
+        # singleton formats: only these cards may exceed quantity 1
+        "multiples_ok": allows_any_number(card),
     }
 
 
@@ -429,8 +431,12 @@ async def add_card(
     deck = await _load_owned(session, deck_id, user)
     if body.board not in BOARDS:
         raise HTTPException(status_code=400, detail="invalid board")
-    if not await session.get(Card, body.oracle_id):
+    card = await session.get(Card, body.oracle_id)
+    if card is None:
         raise HTTPException(status_code=400, detail="unknown card")
+    # singleton formats cap non-exempt cards at quantity 1 (basics etc. exempt)
+    singleton_capped = get_format(deck.format)["singleton"] and not allows_any_number(card)
+    quantity = 1 if singleton_capped else body.quantity
     # merge: same oracle+board+printing -> sum quantities
     existing = (
         await session.execute(
@@ -443,14 +449,14 @@ async def add_card(
         )
     ).scalar_one_or_none()
     if existing is not None:
-        existing.quantity += body.quantity
+        existing.quantity = 1 if singleton_capped else existing.quantity + quantity
         if body.category_id is not None:
             existing.category_id = body.category_id
     else:
         session.add(
             DeckCard(
                 deck_id=deck.id, oracle_id=body.oracle_id, board=body.board,
-                quantity=body.quantity, printing_id=body.printing_id,
+                quantity=quantity, printing_id=body.printing_id,
                 finish=body.finish, category_id=body.category_id,
             )
         )
@@ -477,7 +483,16 @@ async def update_card(
             raise HTTPException(status_code=400, detail="invalid board")
         dc.board = data["board"]
     if "quantity" in data and data["quantity"]:
-        dc.quantity = data["quantity"]
+        qty = data["quantity"]
+        card = await session.get(Card, dc.oracle_id)
+        if (
+            qty > 1
+            and card is not None
+            and get_format(deck.format)["singleton"]
+            and not allows_any_number(card)
+        ):
+            qty = 1  # singleton cap (non-exempt cards)
+        dc.quantity = qty
     if "printing_id" in data:
         dc.printing_id = data["printing_id"]
     if "finish" in data:

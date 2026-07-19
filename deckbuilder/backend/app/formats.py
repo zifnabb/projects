@@ -43,10 +43,14 @@ def can_be_commander(card) -> bool:
     return "legendary" in type_line and "creature" in type_line
 
 
-def _any_number_allowed(card) -> bool:
+def allows_any_number(card) -> bool:
+    """Basic lands + 'a deck can have any number' cards (Shadowborn Apostle…)."""
     type_line = (card.type_line or "").lower()
     text = (card.oracle_text or "").lower()
     return "basic" in type_line or "a deck can have any number of cards named" in text
+
+
+_any_number_allowed = allows_any_number  # internal alias used by validate_deck
 
 
 def validate_deck(format_key: str, deck, card_map: dict, deck_cards: list) -> dict:

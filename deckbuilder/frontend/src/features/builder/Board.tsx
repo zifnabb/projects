@@ -97,6 +97,12 @@ function RowMenu({
   );
 }
 
+/** Singleton formats: the ±stepper only exists for basics / "any number"
+ * cards (user rule: commander + non-basic → max 1, no stepper). */
+function canStep(deck: DeckFull, row: DeckCardRow): boolean {
+  return !deck.format_info.singleton || row.card.multiples_ok === true;
+}
+
 function QtyControls({
   row,
   actions,
@@ -182,7 +188,7 @@ export function Board({
                 <div key={row.id} className={styles.fanRow} tabIndex={0}>
                   <GameCard card={row.card} quantity={row.quantity} />
                   <div className={styles.rowControls}>
-                    <QtyControls row={row} actions={actions} />
+                    {canStep(deck, row) && <QtyControls row={row} actions={actions} />}
                     <RowMenu row={row} deck={deck} actions={actions} />
                   </div>
                 </div>
@@ -194,7 +200,7 @@ export function Board({
                 <div key={row.id} className={styles.fanRow} tabIndex={0}>
                   <GameCard card={row.card} quantity={row.quantity} />
                   <div className={styles.rowControls}>
-                    <QtyControls row={row} actions={actions} />
+                    {canStep(deck, row) && <QtyControls row={row} actions={actions} />}
                     <RowMenu row={row} deck={deck} actions={actions} />
                   </div>
                 </div>
@@ -208,7 +214,7 @@ export function Board({
                   <span className={styles.listName}>{row.card.name}</span>
                   <ManaCost cost={row.card.mana_cost} className={styles.listCost} />
                   <span className={styles.listControls}>
-                    <QtyControls row={row} actions={actions} />
+                    {canStep(deck, row) && <QtyControls row={row} actions={actions} />}
                     <RowMenu row={row} deck={deck} actions={actions} />
                   </span>
                 </div>
