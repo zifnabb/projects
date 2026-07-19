@@ -1,13 +1,13 @@
 /* The board (DESIGN §6.3). Each view has its own geometry:
-   Stacks = horizontal row of fixed card-width columns (scrolls sideways);
+   Stacks = card-width columns wrapping DOWN the page (Commander first);
    List   = group blocks in a responsive grid wrapping DOWN the page;
    Grid   = full-width group sections, card images wrap inside each. */
 .boardStacks {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: var(--space-5);
   padding: var(--space-6);
-  overflow-x: auto;
   min-height: 60vh;
 }
 
@@ -104,6 +104,22 @@
 .fanRow:focus-within > :first-child,
 .fanRow.rowOpen > :first-child {
   box-shadow: 0 0 0 2px var(--color-accent), var(--shadow-md);
+}
+
+/* drag-and-drop target feedback */
+.column.dropActive {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+/* per-card legality problem (banned / not legal / off-identity / over cap):
+   amber ring so the offender is visible at a glance. Hover accent wins. */
+.fanRow.rowIllegal > :first-child {
+  box-shadow: 0 0 0 2px var(--color-warning);
+}
+.listRow.rowIllegal {
+  box-shadow: inset 0 0 0 1px var(--color-warning);
+  background: var(--color-warning-tint);
 }
 
 /* empty category column drop-well */

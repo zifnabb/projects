@@ -119,6 +119,8 @@ export function BuilderPage() {
       updateCard.mutate({ rowId: row.id, body: { board } }),
     moveCategory: (row: DeckCardRow, categoryId: string | null) =>
       updateCard.mutate({ rowId: row.id, body: { category_id: categoryId } }),
+    drop: (row: DeckCardRow, body: { board?: string; category_id?: string | null }) =>
+      updateCard.mutate({ rowId: row.id, body }),
     open: (row: DeckCardRow) => setOpenCard({ oracleId: row.oracle_id, row }),
   };
 
@@ -178,7 +180,7 @@ export function BuilderPage() {
           />
         )}
         <main className={styles.boardArea}>
-          <Board deck={deck} columns={columns} view={view} actions={actions} />
+          <Board deck={deck} columns={columns} group={group} view={view} actions={actions} />
         </main>
         {statsOpen && (
           <StatsSidebar

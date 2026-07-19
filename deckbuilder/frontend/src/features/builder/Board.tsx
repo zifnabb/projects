@@ -3,13 +3,13 @@
  * rows in Stacks view (hover/focus expands the card), List and Grid views.
  * Empty category columns render as labelled wells (they exist deck-level).
  */
-import { useState } from "react";
+import { useState, type DragEvent } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
 import { GameCard } from "../../components/mtg/GameCard";
 import { ManaCost } from "../../components/mtg/ManaCost";
 import type { DeckCardRow, DeckFull } from "../../lib/types";
-import type { BoardColumn, ViewAs } from "./grouping";
+import type { BoardColumn, GroupBy, ViewAs } from "./grouping";
 import { columnQty } from "./grouping";
 import styles from "./Board.module.css";
 
@@ -18,8 +18,33 @@ export interface CardActions {
   remove: (row: DeckCardRow) => void;
   moveBoard: (row: DeckCardRow, board: string) => void;
   moveCategory: (row: DeckCardRow, categoryId: string | null) => void;
+  /** drag-and-drop: one PATCH moving board and/or category together */
+  drop: (row: DeckCardRow, body: { board?: string; category_id?: string | null }) => void;
   /** click a card → open the card detail panel (PLAN §9) */
   open: (row: DeckCardRow) => void;
+}
+
+const DRAG_MIME = "application/x-vermilion-row";
+
+function startDrag(e: DragEvent, row: DeckCardRow) {
+  e.dataTransfer.setData(DRAG_MIME, row.id);
+  e.dataTransfer.effectAllowed = "move";
+}
+
+/** What dropping on this column means — null = not a drop target
+ * (type/cmc/color groupings describe the card, you can't drag it there). */
+function dropBodyFor(
+  col: BoardColumn,
+  group: GroupBy,
+): { board?: string; category_id?: string | null } | null {
+  if (col.kind === "commander") return { board: "command" };
+  if (col.kind === "side") return { board: "side" };
+  if (col.kind === "maybe") return { board: "maybe" };
+  if (col.key === "main") return { board: "main" };
+  if (group === "categories") {
+    return { board: "main", category_id: col.categoryId ?? null };
+  }
+  return null;
 }
 
 const BOARD_TARGETS: { key: string; label: string }[] = [
@@ -170,11 +195,15 @@ function CardTile({
   actions: CardActions;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const illegal = (row.issues?.length ?? 0) > 0;
   return (
     <div
-      className={`${styles.fanRow} ${menuOpen ? styles.rowOpen : ""}`}
+      className={`${styles.fanRow} ${menuOpen ? styles.rowOpen : ""} ${illegal ? styles.rowIllegal : ""}`}
       tabIndex={0}
       role="button"
+      title={illegal ? row.issues!.join(" · ") : undefined}
+      draggable
+      onDragStart={(e) => startDrag(e, row)}
       onClick={() => actions.open(row)}
       onKeyDown={(e) => {
         if (e.key === "Enter") actions.open(row);
@@ -205,11 +234,15 @@ function ListRow({
   actions: CardActions;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const illegal = (row.issues?.length ?? 0) > 0;
   return (
     <div
-      className={`${styles.listRow} ${menuOpen ? styles.rowOpen : ""}`}
+      className={`${styles.listRow} ${menuOpen ? styles.rowOpen : ""} ${illegal ? styles.rowIllegal : ""}`}
       role="button"
       tabIndex={0}
+      title={illegal ? row.issues!.join(" · ") : undefined}
+      draggable
+      onDragStart={(e) => startDrag(e, row)}
       onClick={() => actions.open(row)}
       onKeyDown={(e) => {
         if (e.key === "Enter") actions.open(row);
@@ -258,45 +291,107 @@ const BOARD_CLASS: Record<ViewAs, string> = {
   grid: "boardGrid",
 };
 
+/** One board column — a drop target when the grouping gives the drop a
+ * meaning (category columns, boards). */
+function Column({
+  col,
+  group,
+  deck,
+  view,
+  actions,
+}: {
+  col: BoardColumn;
+  group: GroupBy;
+  deck: DeckFull;
+  view: ViewAs;
+  actions: CardActions;
+}) {
+  const [dragOver, setDragOver] = useState(false);
+  const dropBody = dropBodyFor(col, group);
+
+  function onDrop(e: DragEvent) {
+    e.preventDefault();
+    setDragOver(false);
+    const rowId = e.dataTransfer.getData(DRAG_MIME);
+    const row = deck.cards.find((r) => r.id === rowId);
+    if (!row || !dropBody) return;
+    const sameBoard = dropBody.board === undefined || dropBody.board === row.board;
+    const sameCategory =
+      dropBody.category_id === undefined || dropBody.category_id === row.category_id;
+    if (sameBoard && sameCategory) return; // dropped where it already lives
+    actions.drop(row, dropBody);
+  }
+
+  return (
+    <section
+      className={`${styles.column} ${dragOver ? styles.dropActive : ""}`}
+      aria-label={col.name}
+      onDragOver={
+        dropBody
+          ? (e) => {
+              if (!e.dataTransfer.types.includes(DRAG_MIME)) return;
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+              setDragOver(true);
+            }
+          : undefined
+      }
+      onDragLeave={dropBody ? () => setDragOver(false) : undefined}
+      onDrop={dropBody ? onDrop : undefined}
+    >
+      <ColumnHeader col={col} />
+
+      {col.rows.length === 0 ? (
+        <div className={styles.emptyWell}>
+          {dropBody ? "drop cards here" : "empty"}
+        </div>
+      ) : view === "stacks" ? (
+        <div className={styles.stack}>
+          {col.rows.map((row) => (
+            <CardTile key={row.id} row={row} deck={deck} actions={actions} />
+          ))}
+        </div>
+      ) : view === "grid" ? (
+        <div className={styles.gridWrap}>
+          {col.rows.map((row) => (
+            <CardTile key={row.id} row={row} deck={deck} actions={actions} />
+          ))}
+        </div>
+      ) : (
+        <div>
+          {col.rows.map((row) => (
+            <ListRow key={row.id} row={row} deck={deck} actions={actions} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function Board({
   deck,
   columns,
+  group,
   view,
   actions,
 }: {
   deck: DeckFull;
   columns: BoardColumn[];
+  group: GroupBy;
   view: ViewAs;
   actions: CardActions;
 }) {
   return (
     <div className={styles[BOARD_CLASS[view]]}>
       {columns.map((col) => (
-        <section key={col.key} className={styles.column} aria-label={col.name}>
-          <ColumnHeader col={col} />
-
-          {col.rows.length === 0 ? (
-            <div className={styles.emptyWell}>empty</div>
-          ) : view === "stacks" ? (
-            <div className={styles.stack}>
-              {col.rows.map((row) => (
-                <CardTile key={row.id} row={row} deck={deck} actions={actions} />
-              ))}
-            </div>
-          ) : view === "grid" ? (
-            <div className={styles.gridWrap}>
-              {col.rows.map((row) => (
-                <CardTile key={row.id} row={row} deck={deck} actions={actions} />
-              ))}
-            </div>
-          ) : (
-            <div>
-              {col.rows.map((row) => (
-                <ListRow key={row.id} row={row} deck={deck} actions={actions} />
-              ))}
-            </div>
-          )}
-        </section>
+        <Column
+          key={col.key}
+          col={col}
+          group={group}
+          deck={deck}
+          view={view}
+          actions={actions}
+        />
       ))}
     </div>
   );

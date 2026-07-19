@@ -79,6 +79,20 @@
 .row:last-child {
   border-bottom: none;
 }
+/* drag-reorder: insertion indicator above the hovered row */
+.rowDropTarget {
+  box-shadow: inset 0 2px 0 var(--color-accent);
+}
+.grip {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-text-faint);
+  cursor: grab;
+  flex-shrink: 0;
+}
+.grip:active {
+  cursor: grabbing;
+}
 .nameInput {
   flex: 1;
   min-width: 0;

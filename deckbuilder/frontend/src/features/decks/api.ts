@@ -35,6 +35,8 @@ export const decksApi = {
     api.patch<DeckFull>(`/api/decks/${id}/categories/${categoryId}`, body),
   deleteCategory: (id: string, categoryId: string) =>
     api.del<DeckFull>(`/api/decks/${id}/categories/${categoryId}`),
+  reorderCategories: (id: string, order: string[]) =>
+    api.post<DeckFull>(`/api/decks/${id}/categories/reorder`, { order }),
 
   clone: (id: string) => api.post<DeckFull>(`/api/decks/${id}/clone`),
   setVisibility: (id: string, visibility: "private" | "shared") =>

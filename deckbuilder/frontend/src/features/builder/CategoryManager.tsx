@@ -1,11 +1,11 @@
 /**
  * Category manager (user feedback 2026-07-19): add / rename / retarget /
- * delete deck categories. Rows commit on blur or Enter; deleting a category
- * moves its cards to Uncategorized (server FK SET NULL).
+ * delete / drag-reorder deck categories. Rows commit on blur or Enter;
+ * deleting a category moves its cards to Uncategorized (server FK SET NULL).
  */
-import { useState, type KeyboardEvent } from "react";
+import { useState, type DragEvent, type KeyboardEvent } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Plus, Trash2, X } from "lucide-react";
+import { GripVertical, Plus, Trash2, X } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import type { DeckCategoryOut, DeckFull } from "../../lib/types";
 import { decksApi, useDeckMutation, type CategoryBody } from "../decks/api";
@@ -16,16 +16,29 @@ function toInt(value: string): number | null {
   return Number.isFinite(n) && n >= 0 ? n : null;
 }
 
+const CAT_DRAG_MIME = "application/x-vermilion-category";
+
 function CategoryRow({
   cat,
   cardCount,
+  dropIndicator,
   onSave,
   onDelete,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDrop,
 }: {
   cat: DeckCategoryOut;
   cardCount: number;
+  /** another category is being dragged over this row */
+  dropIndicator: boolean;
   onSave: (body: CategoryBody) => void;
   onDelete: () => void;
+  onDragStart: (e: DragEvent) => void;
+  onDragEnd: () => void;
+  onDragOver: (e: DragEvent) => void;
+  onDrop: (e: DragEvent) => void;
 }) {
   const [name, setName] = useState(cat.name);
   const [min, setMin] = useState(cat.target_min?.toString() ?? "");
@@ -55,7 +68,21 @@ function CategoryRow({
   }
 
   return (
-    <div className={styles.row}>
+    <div
+      className={`${styles.row} ${dropIndicator ? styles.rowDropTarget : ""}`}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
+      <span
+        className={styles.grip}
+        draggable
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        aria-label={`Reorder ${cat.name}`}
+        title="Drag to reorder"
+      >
+        <GripVertical size={14} />
+      </span>
       <input
         className={styles.nameInput}
         value={name}
@@ -111,9 +138,14 @@ export function CategoryManager({
   deck: DeckFull;
 }) {
   const [newName, setNewName] = useState("");
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
 
   const addCategory = useDeckMutation(deck.id, (body: CategoryBody) =>
     decksApi.addCategory(deck.id, body),
+  );
+  const reorder = useDeckMutation(deck.id, (order: string[]) =>
+    decksApi.reorderCategories(deck.id, order),
   );
   const updateCategory = useDeckMutation(
     deck.id,
@@ -142,6 +174,16 @@ export function CategoryManager({
     setNewName("");
   }
 
+  /** drop the dragged category in front of `targetId` */
+  function handleDrop(targetId: string) {
+    if (!dragId || dragId === targetId) return;
+    const order = deck.categories.map((c) => c.id).filter((id) => id !== dragId);
+    order.splice(order.indexOf(targetId), 0, dragId);
+    reorder.mutate(order);
+    setDragId(null);
+    setOverId(null);
+  }
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -159,7 +201,24 @@ export function CategoryManager({
           </div>
 
           {deck.categories.length > 0 ? (
-            <div className={styles.list}>
+            <div
+              className={styles.list}
+              // dropping below the rows moves the dragged category to the end
+              onDragOver={(e) => {
+                if (dragId) e.preventDefault();
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (!dragId) return;
+                const order = deck.categories
+                  .map((c) => c.id)
+                  .filter((id) => id !== dragId);
+                order.push(dragId);
+                reorder.mutate(order);
+                setDragId(null);
+                setOverId(null);
+              }}
+            >
               <div className={styles.headerRow}>
                 <span className={styles.headerName}>Name</span>
                 <span className={styles.headerTargets}>Target (min–max)</span>
@@ -170,10 +229,31 @@ export function CategoryManager({
                   key={`${cat.id}:${cat.name}:${cat.target_min}:${cat.target_max}`}
                   cat={cat}
                   cardCount={counts.get(cat.id) ?? 0}
+                  dropIndicator={overId === cat.id && dragId !== cat.id}
                   onSave={(body) =>
                     updateCategory.mutate({ categoryId: cat.id, body })
                   }
                   onDelete={() => deleteCategory.mutate(cat.id)}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData(CAT_DRAG_MIME, cat.id);
+                    e.dataTransfer.effectAllowed = "move";
+                    setDragId(cat.id);
+                  }}
+                  onDragEnd={() => {
+                    setDragId(null);
+                    setOverId(null);
+                  }}
+                  onDragOver={(e) => {
+                    if (!dragId) return;
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    setOverId(cat.id);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation(); // container drop appends to the end
+                    handleDrop(cat.id);
+                  }}
                 />
               ))}
             </div>
@@ -205,8 +285,9 @@ export function CategoryManager({
           </form>
 
           <p className={styles.hint}>
-            Deleting a category doesn't remove its cards — they become
-            Uncategorized. Assign cards from a card's ⋯ menu.
+            Drag the grip to reorder columns. Deleting a category doesn't
+            remove its cards — they become Uncategorized. Assign cards from a
+            card's ⋯ menu or by dragging them between columns.
           </p>
         </Dialog.Content>
       </Dialog.Portal>

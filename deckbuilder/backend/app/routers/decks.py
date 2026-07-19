@@ -72,6 +72,10 @@ class TagBody(BaseModel):
     tag: str
 
 
+class CategoryOrderBody(BaseModel):
+    order: list[str]  # category ids, new display order
+
+
 class VisibilityBody(BaseModel):
     visibility: str  # private | shared
 
@@ -148,6 +152,32 @@ def _card_summary(card: Card | None) -> dict:
     }
 
 
+def _card_issues(deck: Deck, fmt: dict, dc: DeckCard, card: Card | None) -> list[str]:
+    """Per-row legality problems (yellow highlight in the UI) — same rules as
+    validate_deck, but evaluated per card so the board can flag offenders.
+    Format/identity issues flag every board; the singleton cap only counts
+    main+command (matching the deck-level check)."""
+    if card is None:
+        return []
+    issues: list[str] = []
+    status = (card.legalities or {}).get(deck.format)
+    if status == "banned":
+        issues.append(f"Banned in {fmt['name']}")
+    elif status == "not_legal":
+        issues.append(f"Not legal in {fmt['name']}")
+    if fmt["enforce_color_identity"] and deck.commander_oracle_id:
+        if not set(card.color_identity or []) <= set(deck.color_identity or []):
+            issues.append("Outside the commander's color identity")
+    if (
+        fmt["singleton"]
+        and dc.board in ("main", "command")
+        and dc.quantity > 1
+        and not allows_any_number(card)
+    ):
+        issues.append(f"Appears {dc.quantity}× (singleton allows one)")
+    return issues
+
+
 async def _serialize_full(session: AsyncSession, deck: Deck) -> dict:
     cards = await _deck_cards(session, deck.id)
     ids = {dc.oracle_id for dc in cards}
@@ -155,6 +185,7 @@ async def _serialize_full(session: AsyncSession, deck: Deck) -> dict:
         ids.add(deck.commander_oracle_id)
     cmap = await _card_map(session, ids)
     legality = validate_deck(deck.format, deck, cmap, cards)
+    fmt = get_format(deck.format)
 
     cats = (
         await session.execute(
@@ -199,6 +230,7 @@ async def _serialize_full(session: AsyncSession, deck: Deck) -> dict:
                 "finish": dc.finish,
                 "category_id": dc.category_id,
                 "card": _card_summary(cmap.get(dc.oracle_id)),
+                "issues": _card_issues(deck, fmt, dc, cmap.get(dc.oracle_id)),
             }
             for dc in cards
         ],
@@ -584,6 +616,36 @@ async def delete_category(
     if cat is None or cat.deck_id != deck.id:
         raise HTTPException(status_code=404, detail="category not found")
     await session.delete(cat)  # deck_cards.category_id -> SET NULL via FK
+    deck.updated_at = _now()
+    await session.commit()
+    return await _serialize_full(session, deck)
+
+
+@router.post("/decks/{deck_id}/categories/reorder")
+async def reorder_categories(
+    deck_id: str,
+    body: CategoryOrderBody,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    """Drag-reorder: position = index in `order`; ids not listed keep their
+    relative order after the listed ones."""
+    deck = await _load_owned(session, deck_id, user)
+    cats = (
+        await session.execute(
+            select(DeckCategory).where(DeckCategory.deck_id == deck.id).order_by(DeckCategory.position)
+        )
+    ).scalars().all()
+    by_id = {c.id: c for c in cats}
+    pos = 0
+    for cid in body.order:
+        cat = by_id.pop(cid, None)
+        if cat is not None:
+            cat.position = pos
+            pos += 1
+    for cat in by_id.values():  # anything the client didn't mention
+        cat.position = pos
+        pos += 1
     deck.updated_at = _now()
     await session.commit()
     return await _serialize_full(session, deck)

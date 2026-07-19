@@ -95,6 +95,8 @@ export interface DeckCardRow {
   finish: string | null;
   category_id: string | null;
   card: CardSummary;
+  /** per-card legality problems (banned / not legal / off-identity / over cap) */
+  issues?: string[];
 }
 
 export interface DeckFull {
