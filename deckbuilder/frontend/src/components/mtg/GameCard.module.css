@@ -36,23 +36,24 @@
   color: var(--color-text-muted);
 }
 
-/* Game Changer badge — right edge, tucked just under the mana pips so it
-   never covers the card title. Still within the Stacks fan strip (which
-   reveals the top of each card); partial occlusion by the next card is fine. */
+/* Game Changer badge — an on-card chip in the top-right, just under the mana
+   pips (inset, all corners rounded, like the qty badge) so it reads as part of
+   the card, never covers the title, and sits within the Stacks fan strip. */
 .gameChanger {
   position: absolute;
-  top: 9.5%;
-  right: 0;
+  top: 6%;
+  right: 3%;
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  padding: 2px 6px;
-  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  padding: 2px 5px;
+  border-radius: var(--radius-sm);
   background: rgba(232, 85, 46, 0.95); /* vermilion accent */
   color: #fff;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.03em;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
   pointer-events: none;
   z-index: 2;
 }
