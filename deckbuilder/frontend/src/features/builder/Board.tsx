@@ -97,17 +97,25 @@ function RowMenu({
   );
 }
 
-/** Singleton formats: the ±stepper only exists for basics / "any number"
- * cards (user rule: commander + non-basic → max 1, no stepper). */
-function canStep(deck: DeckFull, row: DeckCardRow): boolean {
+/** Singleton formats: only basics / "any number" cards may exceed 1
+ * (user rule: commander + non-basic → max 1, no stepper). */
+function allowsMultiples(deck: DeckFull, row: DeckCardRow): boolean {
   return !deck.format_info.singleton || row.card.multiples_ok === true;
+}
+
+/** Show the stepper when stepping is meaningful — always for multiples-ok
+ * cards, and for capped cards only while over-quantity (to step back down). */
+function canStep(deck: DeckFull, row: DeckCardRow): boolean {
+  return allowsMultiples(deck, row) || row.quantity > 1;
 }
 
 function QtyControls({
   row,
+  allowIncrease,
   actions,
 }: {
   row: DeckCardRow;
+  allowIncrease: boolean;
   actions: CardActions;
 }) {
   return (
@@ -129,7 +137,9 @@ function QtyControls({
         type="button"
         className={styles.ctlButton}
         aria-label="Increase quantity"
-        onClick={() => actions.setQuantity(row, row.quantity + 1)}
+        disabled={!allowIncrease}
+        style={!allowIncrease ? { opacity: 0.35, cursor: "default" } : undefined}
+        onClick={() => allowIncrease && actions.setQuantity(row, row.quantity + 1)}
       >
         +
       </button>
@@ -188,7 +198,9 @@ export function Board({
                 <div key={row.id} className={styles.fanRow} tabIndex={0}>
                   <GameCard card={row.card} quantity={row.quantity} />
                   <div className={styles.rowControls}>
-                    {canStep(deck, row) && <QtyControls row={row} actions={actions} />}
+                    {canStep(deck, row) && (
+                    <QtyControls row={row} allowIncrease={allowsMultiples(deck, row)} actions={actions} />
+                  )}
                     <RowMenu row={row} deck={deck} actions={actions} />
                   </div>
                 </div>
@@ -200,7 +212,9 @@ export function Board({
                 <div key={row.id} className={styles.fanRow} tabIndex={0}>
                   <GameCard card={row.card} quantity={row.quantity} />
                   <div className={styles.rowControls}>
-                    {canStep(deck, row) && <QtyControls row={row} actions={actions} />}
+                    {canStep(deck, row) && (
+                    <QtyControls row={row} allowIncrease={allowsMultiples(deck, row)} actions={actions} />
+                  )}
                     <RowMenu row={row} deck={deck} actions={actions} />
                   </div>
                 </div>
@@ -214,7 +228,9 @@ export function Board({
                   <span className={styles.listName}>{row.card.name}</span>
                   <ManaCost cost={row.card.mana_cost} className={styles.listCost} />
                   <span className={styles.listControls}>
-                    {canStep(deck, row) && <QtyControls row={row} actions={actions} />}
+                    {canStep(deck, row) && (
+                    <QtyControls row={row} allowIncrease={allowsMultiples(deck, row)} actions={actions} />
+                  )}
                     <RowMenu row={row} deck={deck} actions={actions} />
                   </span>
                 </div>
