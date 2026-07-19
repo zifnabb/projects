@@ -4,7 +4,7 @@
  * slice. View/group/sort live in URL params (shareable, survives reload).
  */
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { BarChart3, Search } from "lucide-react";
+import { BarChart3, Search, Tags } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { ManaCost } from "../../components/mtg/ManaCost";
 import type { AutocompleteResult } from "../../lib/types";
@@ -21,12 +21,19 @@ function useDebounced(value: string, ms = 180): string {
   return debounced;
 }
 
-function QuickAdd({ onAdd }: { onAdd: (card: AutocompleteResult) => void }) {
+function QuickAdd({
+  onAdd,
+  identity,
+}: {
+  onAdd: (card: AutocompleteResult) => void;
+  /** WUBRG letters ("" = colorless): restrict results to the deck's identity */
+  identity?: string;
+}) {
   const [q, setQ] = useState("");
   const [active, setActive] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounced = useDebounced(q);
-  const { data } = useAutocomplete(debounced, false, 7);
+  const { data } = useAutocomplete(debounced, false, 7, identity);
   const results = q.trim().length >= 2 ? (data?.results ?? []) : [];
 
   // Cmd+' focuses quick-add (PLAN §11)
@@ -109,12 +116,14 @@ export function Toolbar({
   hasCategories,
   searchOpen,
   statsOpen,
+  identity,
   onView,
   onGroup,
   onSort,
   onAdd,
   onToggleSearch,
   onToggleStats,
+  onManageCategories,
 }: {
   view: ViewAs;
   group: GroupBy;
@@ -122,12 +131,15 @@ export function Toolbar({
   hasCategories: boolean;
   searchOpen: boolean;
   statsOpen: boolean;
+  /** deck color identity for quick-add filtering (undefined = no filter) */
+  identity?: string;
   onView: (v: ViewAs) => void;
   onGroup: (g: GroupBy) => void;
   onSort: (s: SortBy) => void;
   onAdd: (card: AutocompleteResult) => void;
   onToggleSearch: () => void;
   onToggleStats: () => void;
+  onManageCategories: () => void;
 }) {
   return (
     <div className={styles.toolbar}>
@@ -145,7 +157,15 @@ export function Toolbar({
 
       <div className={styles.group}>
         <span className={styles.groupLabel}>Add card</span>
-        <QuickAdd onAdd={onAdd} />
+        <QuickAdd onAdd={onAdd} identity={identity} />
+      </div>
+
+      <div className={styles.group}>
+        <span className={styles.groupLabel}>Categories</span>
+        <Button variant="ghost" size="sm" onClick={onManageCategories}>
+          <Tags size={14} aria-hidden="true" />
+          Edit
+        </Button>
       </div>
 
       <div className={styles.group}>

@@ -29,6 +29,13 @@ export const decksApi = {
   removeCard: (id: string, rowId: string) =>
     api.del<DeckFull>(`/api/decks/${id}/cards/${rowId}`),
 
+  addCategory: (id: string, body: CategoryBody) =>
+    api.post<DeckFull>(`/api/decks/${id}/categories`, body),
+  updateCategory: (id: string, categoryId: string, body: CategoryBody) =>
+    api.patch<DeckFull>(`/api/decks/${id}/categories/${categoryId}`, body),
+  deleteCategory: (id: string, categoryId: string) =>
+    api.del<DeckFull>(`/api/decks/${id}/categories/${categoryId}`),
+
   clone: (id: string) => api.post<DeckFull>(`/api/decks/${id}/clone`),
   setVisibility: (id: string, visibility: "private" | "shared") =>
     api.post<{ visibility: string; share_token: string | null }>(
@@ -52,6 +59,15 @@ export const decksApi = {
     lines: ImportCommitLine[];
     categories?: { name: string; target_min?: number | null; target_max?: number | null }[];
   }) => api.post<DeckFull>("/api/io/import/commit", body),
+};
+
+/* type alias (not interface) so it satisfies api.post's Json record type */
+export type CategoryBody = {
+  name: string;
+  target_min?: number | null;
+  target_max?: number | null;
+  color_tag?: string | null;
+  position?: number | null;
 };
 
 export interface ImportLine {
@@ -125,13 +141,22 @@ export function useFormats() {
   });
 }
 
-/** Debounce-friendly card autocomplete (local pg_trgm, cheap). */
-export function useAutocomplete(q: string, commandersOnly = false, limit = 15) {
+/** Debounce-friendly card autocomplete (local pg_trgm, cheap).
+ * `identity` (WUBRG letters, "" = colorless) restricts results to cards that
+ * fit inside that color identity — used by the builder's quick-add. */
+export function useAutocomplete(
+  q: string,
+  commandersOnly = false,
+  limit = 15,
+  identity?: string,
+) {
+  const identityParam =
+    identity !== undefined ? `&identity=${encodeURIComponent(identity)}` : "";
   return useQuery({
-    queryKey: ["autocomplete", q, commandersOnly, limit],
+    queryKey: ["autocomplete", q, commandersOnly, limit, identity ?? null],
     queryFn: () =>
       api.get<{ results: AutocompleteResult[] }>(
-        `/api/search/autocomplete?q=${encodeURIComponent(q)}&commanders_only=${commandersOnly}&limit=${limit}`,
+        `/api/search/autocomplete?q=${encodeURIComponent(q)}&commanders_only=${commandersOnly}&limit=${limit}${identityParam}`,
       ),
     enabled: q.trim().length >= 2,
     staleTime: 10 * 60 * 1000,

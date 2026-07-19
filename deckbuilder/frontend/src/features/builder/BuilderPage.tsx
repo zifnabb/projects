@@ -12,6 +12,7 @@ import { decksApi, useDeck, useDeckMutation } from "../decks/api";
 import { CardPanel, type CardPanelState } from "../cardpanel/CardPanel";
 import { SearchPanel } from "../search/SearchPanel";
 import { Board, type CardActions } from "./Board";
+import { CategoryManager } from "./CategoryManager";
 import { DeckHeader } from "./DeckHeader";
 import { ImportModal } from "./ImportModal";
 import { StatsSidebar } from "./StatsSidebar";
@@ -44,6 +45,7 @@ export function BuilderPage() {
 
   const [openCard, setOpenCard] = useState<CardPanelState | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [injectedQuery, setInjectedQuery] = useState<string | null>(null);
 
   const rename = useDeckMutation(deckId!, (name: string) =>
@@ -80,6 +82,12 @@ export function BuilderPage() {
   }
 
   const hasCategories = deck.categories.length > 0;
+  // quick-add stays inside the deck's color identity once a commander is set
+  // ("" = colorless commander -> colorless cards only)
+  const quickAddIdentity =
+    deck.format_info.enforce_color_identity && deck.commander_oracle_id
+      ? deck.color_identity.join("")
+      : undefined;
   const searchOpen = params.get("search") === "1";
   const statsOpen = params.get("stats") === "1";
   const view = (params.get("view") as ViewAs) || "stacks";
@@ -150,12 +158,14 @@ export function BuilderPage() {
         hasCategories={hasCategories}
         searchOpen={searchOpen}
         statsOpen={statsOpen}
+        identity={quickAddIdentity}
         onView={(v) => setParam("view", v)}
         onGroup={(g) => setParam("group", g)}
         onSort={(s) => setParam("sort", s)}
         onAdd={(card) => addCard.mutate(card)}
         onToggleSearch={() => setParam("search", searchOpen ? "0" : "1")}
         onToggleStats={() => setParam("stats", statsOpen ? "0" : "1")}
+        onManageCategories={() => setCategoriesOpen(true)}
       />
       <div className={styles.workspace}>
         {searchOpen && (
@@ -200,6 +210,11 @@ export function BuilderPage() {
       />
 
       <ImportModal open={importOpen} onOpenChange={setImportOpen} deckId={deck.id} />
+      <CategoryManager
+        open={categoriesOpen}
+        onOpenChange={setCategoriesOpen}
+        deck={deck}
+      />
     </div>
   );
 }

@@ -80,7 +80,12 @@ def _serialize(card: Card | None, payload: dict | None) -> dict:
 
 
 async def autocomplete(
-    session: AsyncSession, q: str, limit: int = 15, *, commanders_only: bool = False
+    session: AsyncSession,
+    q: str,
+    limit: int = 15,
+    *,
+    commanders_only: bool = False,
+    identity: str | None = None,
 ) -> list[dict]:
     q = q.strip()
     if not q:
@@ -99,6 +104,14 @@ async def autocomplete(
         )
         .limit(limit)
     )
+    if identity is not None:
+        # within-color-identity filter (quick-add in commander decks):
+        # "" = colorless deck -> colorless cards only
+        letters = [c for c in identity.upper() if c in "WUBRG"]
+        if letters:
+            stmt = stmt.where(Card.color_identity.contained_by(letters))
+        else:
+            stmt = stmt.where(func.cardinality(Card.color_identity) == 0)
     if commanders_only:
         # valid commanders, commander-legal (the picker's "legal only" toggle)
         stmt = stmt.where(
