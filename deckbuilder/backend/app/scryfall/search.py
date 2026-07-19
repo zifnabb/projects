@@ -20,6 +20,15 @@ log = logging.getLogger("scryfall.search")
 SEARCH_URL = "https://api.scryfall.com/cards/search"
 RULINGS_URL = "https://api.scryfall.com/cards/{id}/rulings"
 
+# Non-playable layouts excluded from deck-building search (tokens, emblems…).
+_NON_PLAYABLE_LAYOUTS = ("token", "double_faced_token", "emblem", "art_series")
+
+
+def _playable(stmt):
+    return stmt.where(
+        or_(Card.layout.is_(None), Card.layout.notin_(_NON_PLAYABLE_LAYOUTS))
+    )
+
 
 def _serialize(card: Card | None, payload: dict | None) -> dict:
     """Merge a local gameplay row with a Scryfall search payload. Local fields
@@ -80,7 +89,7 @@ async def autocomplete(
     like = f"%{lowered}%"
     prefix = f"{lowered}%"
     # prefix matches first, then shortest names, then alphabetical
-    stmt = (
+    stmt = _playable(
         select(Card)
         .where(func.lower(Card.name).like(like))
         .order_by(
@@ -119,7 +128,7 @@ async def autocomplete(
 async def _local_fallback(session: AsyncSession, query: str, limit: int = 60) -> dict:
     # Best-effort degrade: treat the query as a name substring.
     like = f"%{query.lower()}%"
-    stmt = (
+    stmt = _playable(
         select(Card)
         .where(func.lower(Card.name).like(like))
         .order_by(func.length(Card.name), Card.name)
