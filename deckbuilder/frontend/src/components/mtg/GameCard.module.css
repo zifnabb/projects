@@ -36,17 +36,18 @@
   color: var(--color-text-muted);
 }
 
-/* Game Changer badge — top-left, always visible (incl. the Stacks fan strip,
-   which only reveals the top of each card). */
+/* Game Changer badge — right edge, tucked just under the mana pips so it
+   never covers the card title. Still within the Stacks fan strip (which
+   reveals the top of each card); partial occlusion by the next card is fine. */
 .gameChanger {
   position: absolute;
-  top: 4%;
-  left: 3%;
+  top: 9.5%;
+  right: 0;
   display: inline-flex;
   align-items: center;
   gap: 3px;
   padding: 2px 6px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
   background: rgba(232, 85, 46, 0.95); /* vermilion accent */
   color: #fff;
   font-size: 10px;
