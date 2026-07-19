@@ -1,73 +1,117 @@
 /**
- * Home dashboard — PLACEHOLDER for the auth vertical slice. Proves the guarded
- * route, session identity, theme toggle, and logout. The real dashboard
- * (deck grid + unified search, PLAN §10 / DESIGN §8.2) replaces the body next.
+ * Home dashboard (PLAN §10 / DESIGN §8.2) — YOUR decks only, no community.
+ * Client-side sort/filter (tiny scale); the unified Cards↔Decks top-bar search
+ * lands with the card-panel slice.
  */
-import { LogOut, Moon, Sun } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useMutation } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { Plus, Search } from "lucide-react";
+import { useOutletContext } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
-import { Wordmark } from "../../components/ui/Wordmark";
-import { useTheme } from "../../theme/ThemeProvider";
-import { authApi } from "../auth/api";
-import { useSession, useSetSession } from "../auth/session";
+import { TextField } from "../../components/ui/TextField";
+import type { AppShellContext } from "../../components/shell/AppShell";
+import type { DeckListItem } from "../../lib/types";
+import { useDecks } from "../decks/api";
+import { DeckCard } from "./DeckCard";
+import styles from "./HomePage.module.css";
+
+type SortKey = "updated" | "name" | "format";
+
+function sortDecks(decks: DeckListItem[], key: SortKey): DeckListItem[] {
+  const copy = [...decks];
+  switch (key) {
+    case "name":
+      return copy.sort((a, b) => a.name.localeCompare(b.name));
+    case "format":
+      return copy.sort((a, b) => a.format.localeCompare(b.format));
+    default:
+      return copy; // API returns updated-desc already
+  }
+}
 
 export function HomePage() {
-  const { user } = useSession();
-  const setSession = useSetSession();
-  const navigate = useNavigate();
-  const { theme, toggle } = useTheme();
+  const { openNewDeck } = useOutletContext<AppShellContext>();
+  const { data: decks, isLoading } = useDecks();
+  const [sort, setSort] = useState<SortKey>("updated");
+  const [filter, setFilter] = useState("");
 
-  const logout = useMutation({
-    mutationFn: authApi.logout,
-    onSuccess: () => {
-      setSession(null);
-      navigate("/login", { replace: true });
-    },
-  });
+  const visible = useMemo(() => {
+    if (!decks) return [];
+    const q = filter.trim().toLowerCase();
+    const filtered = q
+      ? decks.filter(
+          (d) =>
+            d.name.toLowerCase().includes(q) ||
+            d.format.toLowerCase().includes(q) ||
+            d.tags.some((t) => t.toLowerCase().includes(q)),
+        )
+      : decks;
+    return sortDecks(filtered, sort);
+  }, [decks, filter, sort]);
 
-  return (
-    <div style={{ minHeight: "100vh" }}>
-      <header
-        style={{
-          height: 56,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 var(--space-6)",
-          background: "var(--color-surface)",
-          borderBottom: "1px solid var(--color-border)",
-        }}
-      >
-        <Wordmark size="sm" />
-        <div style={{ display: "flex", gap: "var(--space-4)", alignItems: "center" }}>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggle}
-            aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-          >
-            {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => logout.mutate()}
-            loading={logout.isPending}
-          >
-            <LogOut size={16} />
-            Sign out
+  if (isLoading) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.headerRow}>
+          <h2 className={styles.title}>Your decks</h2>
+        </div>
+        <div className={styles.grid}>
+          {Array.from({ length: 4 }, (_, i) => (
+            <div key={i} className={styles.skeleton} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!decks || decks.length === 0) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.empty}>
+          <h1 className={styles.emptyTitle}>Build your first deck</h1>
+          <p className={styles.emptyText}>
+            Pick a commander, start from a deckbuilding template, and the
+            skeleton will guide you the rest of the way.
+          </p>
+          <Button variant="primary" size="lg" onClick={openNewDeck}>
+            <Plus size={18} aria-hidden="true" />
+            New Deck
           </Button>
         </div>
-      </header>
+      </div>
+    );
+  }
 
-      <main style={{ padding: "var(--space-9)", maxWidth: 960, margin: "0 auto" }}>
-        <h2 className="t-h2">Your decks</h2>
-        <p className="t-caption">
-          Signed in as <strong>{user?.display_name}</strong> (@{user?.username})
-          {user?.is_admin ? " · admin" : ""} — deck grid lands here next.
-        </p>
-      </main>
+  return (
+    <div className={styles.page}>
+      <div className={styles.headerRow}>
+        <h2 className={styles.title}>Your decks</h2>
+        <span className={styles.spacer} />
+        <div className={styles.controls}>
+          <TextField
+            placeholder="Filter decks…"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            trailing={<Search size={14} aria-hidden="true" />}
+            aria-label="Filter decks"
+          />
+          <select
+            className={styles.select}
+            value={sort}
+            onChange={(e) => setSort(e.target.value as SortKey)}
+            aria-label="Sort decks"
+          >
+            <option value="updated">Recently updated</option>
+            <option value="name">Name</option>
+            <option value="format">Format</option>
+          </select>
+        </div>
+      </div>
+
+      <div className={styles.grid}>
+        {visible.map((d) => (
+          <DeckCard key={d.id} deck={d} />
+        ))}
+      </div>
     </div>
   );
 }

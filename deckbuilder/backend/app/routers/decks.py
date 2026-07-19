@@ -203,6 +203,27 @@ async def _serialize_full(session: AsyncSession, deck: Deck) -> dict:
 
 
 # ------------------------------ endpoints ---------------------------------- #
+@router.get("/formats")
+async def formats_catalog() -> dict:
+    """The format catalog (config, PLAN §6) — drives the New-Deck picker.
+    Each format also carries its default deckbuilding template (or null) so
+    the New-Deck toggle can preview the skeleton buckets.
+    """
+    out = {}
+    for key, fmt in FORMATS.items():
+        tmpl = template_for_format(key)
+        out[key] = {**fmt, "template": tmpl}
+    return {"default": DEFAULT_FORMAT, "formats": out}
+
+
+@router.get("/decks/random-name")
+async def deck_random_name() -> dict:
+    """A randomized MTG-flavored deck name for the New-Deck 🎲 re-roll (PLAN §12).
+    Declared before /decks/{deck_id} so the literal path wins.
+    """
+    return {"name": random_deck_name()}
+
+
 @router.post("/decks", status_code=status.HTTP_201_CREATED)
 async def create_deck(
     body: CreateDeckBody,
@@ -258,6 +279,7 @@ async def list_decks(
     ids = [d.id for d in decks]
     counts: dict[str, int] = {}
     tags: dict[str, list[str]] = {}
+    art: dict[str, str] = {}
     if ids:
         rows = await session.execute(
             select(DeckCard.deck_id, func.coalesce(func.sum(DeckCard.quantity), 0))
@@ -268,6 +290,15 @@ async def list_decks(
         trows = await session.execute(select(DeckTag).where(DeckTag.deck_id.in_(ids)))
         for t in trows.scalars():
             tags.setdefault(t.deck_id, []).append(t.tag)
+        # dashboard tile art: deck art wins, else commander; art_crop preferred
+        art_ids = {d.deck_art_oracle_id or d.commander_oracle_id for d in decks} - {None}
+        cmap = await _card_map(session, art_ids)  # type: ignore[arg-type]
+        for d in decks:
+            card = cmap.get(d.deck_art_oracle_id or d.commander_oracle_id or "")
+            if card and card.image_uris:
+                url = card.image_uris.get("art_crop") or card.image_uris.get("normal")
+                if url:
+                    art[d.id] = url
     return [
         {
             "id": d.id,
@@ -279,6 +310,7 @@ async def list_decks(
             "visibility": d.visibility,
             "size": counts.get(d.id, 0),
             "tags": tags.get(d.id, []),
+            "art": art.get(d.id),
             "updated_at": d.updated_at.isoformat() if d.updated_at else None,
         }
         for d in decks

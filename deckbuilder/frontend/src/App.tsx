@@ -1,8 +1,10 @@
 import { Route, Routes } from "react-router-dom";
+import { AppShell } from "./components/shell/AppShell";
 import { LoginPage } from "./features/auth/LoginPage";
 import { RegisterPage } from "./features/auth/RegisterPage";
 import { ResetPage } from "./features/auth/ResetPage";
 import { RequireAuth } from "./features/auth/RequireAuth";
+import { BuilderPage } from "./features/builder/BuilderPage";
 import { HomePage } from "./features/home/HomePage";
 
 export default function App() {
@@ -13,10 +15,13 @@ export default function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/reset" element={<ResetPage />} />
 
-      {/* Authenticated app */}
+      {/* Authenticated app (App shell: top bar + New Deck modal) */}
       <Route element={<RequireAuth />}>
-        <Route path="/" element={<HomePage />} />
-        {/* /decks/:id (builder), /admin, /account slot in here */}
+        <Route element={<AppShell />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/decks/:deckId" element={<BuilderPage />} />
+          {/* /admin, /account slot in here */}
+        </Route>
       </Route>
     </Routes>
   );

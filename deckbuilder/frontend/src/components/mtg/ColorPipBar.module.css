@@ -1,0 +1,15 @@
+.bar {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+}
+
+/* 10px circles, fill + 1px glyph-colored ring (DESIGN §3.4). The letter is
+   for screen readers / colorblind meaning — visually the pip is the mark. */
+.pip {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid;
+  box-sizing: border-box;
+}

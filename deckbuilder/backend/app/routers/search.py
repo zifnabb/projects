@@ -23,9 +23,10 @@ class CompileRequest(BaseModel):
 async def autocomplete(
     q: str = Query(..., min_length=1),
     limit: int = Query(15, ge=1, le=50),
+    commanders_only: bool = Query(False),
     session: AsyncSession = Depends(get_session),
 ) -> dict:
-    return {"results": await sf.autocomplete(session, q, limit)}
+    return {"results": await sf.autocomplete(session, q, limit, commanders_only=commanders_only)}
 
 
 @router.get("/search")

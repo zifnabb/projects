@@ -9,7 +9,7 @@ Two lanes (PLAN §8):
 
 import logging
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.http_adapter import ThirdPartyError, fetch_json
@@ -70,7 +70,9 @@ def _serialize(card: Card | None, payload: dict | None) -> dict:
     }
 
 
-async def autocomplete(session: AsyncSession, q: str, limit: int = 15) -> list[dict]:
+async def autocomplete(
+    session: AsyncSession, q: str, limit: int = 15, *, commanders_only: bool = False
+) -> list[dict]:
     q = q.strip()
     if not q:
         return []
@@ -79,7 +81,7 @@ async def autocomplete(session: AsyncSession, q: str, limit: int = 15) -> list[d
     prefix = f"{lowered}%"
     # prefix matches first, then shortest names, then alphabetical
     stmt = (
-        select(Card.name, Card.oracle_id)
+        select(Card)
         .where(func.lower(Card.name).like(like))
         .order_by(
             (func.lower(Card.name).like(prefix)).desc(),
@@ -88,8 +90,30 @@ async def autocomplete(session: AsyncSession, q: str, limit: int = 15) -> list[d
         )
         .limit(limit)
     )
-    rows = (await session.execute(stmt)).all()
-    return [{"name": name, "oracle_id": oid} for name, oid in rows]
+    if commanders_only:
+        # valid commanders, commander-legal (the picker's "legal only" toggle)
+        stmt = stmt.where(
+            or_(
+                and_(
+                    func.lower(Card.type_line).like("%legendary%"),
+                    func.lower(Card.type_line).like("%creature%"),
+                ),
+                func.lower(Card.oracle_text).like("%can be your commander%"),
+            ),
+            Card.legalities["commander"].astext == "legal",
+        )
+    cards = (await session.execute(stmt)).scalars().all()
+    return [
+        {
+            "name": c.name,
+            "oracle_id": c.oracle_id,
+            "mana_cost": c.mana_cost,
+            "type_line": c.type_line,
+            "color_identity": c.color_identity,
+            "image": c.image_uris or {},
+        }
+        for c in cards
+    ]
 
 
 async def _local_fallback(session: AsyncSession, query: str, limit: int = 60) -> dict:

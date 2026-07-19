@@ -1,0 +1,36 @@
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 20px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Legal / Draft share size+shape so the flip is a color change in place
+   (DESIGN §3.3 — the app's most-repeated status pair). */
+.legal {
+  background: var(--color-success-tint);
+  color: var(--color-success);
+}
+.draft {
+  background: var(--color-warning-tint);
+  color: var(--color-warning);
+}
+
+.tag {
+  background: var(--color-surface-sunken);
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: currentColor;
+}
