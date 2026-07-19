@@ -31,9 +31,11 @@ function useDebouncedValue<T>(value: T, ms = 300): T {
 function Results({
   query,
   onAdd,
+  onOpen,
 }: {
   query: string;
   onAdd: (card: SearchCard) => void;
+  onOpen?: (card: SearchCard) => void;
 }) {
   const search = useCardSearch(query);
   const pages = search.data?.pages ?? [];
@@ -70,9 +72,17 @@ function Results({
       {first?.warning && <div className={styles.warning}>{first.warning}</div>}
       <div className={styles.resultsGrid}>
         {cards.map((card) => (
-          <div key={card.oracle_id} className={styles.resultCard}>
+          <div
+            key={card.oracle_id}
+            className={styles.resultCard}
+            role="button"
+            tabIndex={0}
+            style={{ cursor: "pointer" }}
+            onClick={() => onOpen?.(card)}
+            onKeyDown={(e) => e.key === "Enter" && onOpen?.(card)}
+          >
             <GameCard card={card} />
-            <div className={styles.addOverlay}>
+            <div className={styles.addOverlay} onClick={(e) => e.stopPropagation()}>
               <Button variant="primary" size="sm" onClick={() => onAdd(card)}>
                 + Add
               </Button>
@@ -102,12 +112,18 @@ export function SearchPanel({
   deck,
   onClose,
   onAdd,
+  onOpenCard,
+  injectedQuery,
 }: {
   deck: DeckFull;
   onClose: () => void;
   onAdd: (card: SearchCard) => void;
+  onOpenCard?: (card: SearchCard) => void;
+  /** e.g. "set:unf" from the card panel's set link — lands in the Syntax tab */
+  injectedQuery?: string | null;
 }) {
   const identity = deck.color_identity.join("").toLowerCase();
+  const [activeTab, setActiveTab] = useState("search");
 
   /* ---- Search tab (merged form, prefilled from deck context) ---- */
   const [adv, setAdv] = useState<AdvancedFilters>(() => {
@@ -161,6 +177,15 @@ export function SearchPanel({
     setRawQuery(rawInput.trim());
   }
 
+  // a query injected from elsewhere (card panel set-link) runs immediately
+  useEffect(() => {
+    if (injectedQuery) {
+      setRawInput(injectedQuery);
+      setRawQuery(injectedQuery);
+      setActiveTab("syntax");
+    }
+  }, [injectedQuery]);
+
   return (
     <aside className={styles.panel} aria-label="Card search">
       <div className={styles.panelHeader}>
@@ -175,7 +200,7 @@ export function SearchPanel({
         </button>
       </div>
 
-      <Tabs.Root defaultValue="search" className={styles.tabsRoot}>
+      <Tabs.Root value={activeTab} onValueChange={setActiveTab} className={styles.tabsRoot}>
         <Tabs.List className={styles.tabList} aria-label="Search mode">
           <Tabs.Trigger className={styles.tab} value="search">
             Search
@@ -314,7 +339,7 @@ export function SearchPanel({
             </Button>
           </form>
           <div className={styles.results}>
-            <Results query={advQuery} onAdd={onAdd} />
+            <Results query={advQuery} onAdd={onAdd} onOpen={onOpenCard} />
           </div>
         </Tabs.Content>
 
@@ -338,7 +363,7 @@ export function SearchPanel({
             </Button>
           </form>
           <div className={styles.results}>
-            <Results query={rawQuery} onAdd={onAdd} />
+            <Results query={rawQuery} onAdd={onAdd} onOpen={onOpenCard} />
           </div>
         </Tabs.Content>
       </Tabs.Root>

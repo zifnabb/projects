@@ -143,6 +143,8 @@ def _card_summary(card: Card | None) -> dict:
         "image": card.image_uris or {},
         # singleton formats: only these cards may exceed quantity 1
         "multiples_ok": allows_any_number(card),
+        # stats sidebar inputs (color cost & production, PLAN §11)
+        "produced_mana": card.produced_mana,
     }
 
 

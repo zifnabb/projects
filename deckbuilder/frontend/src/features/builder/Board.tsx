@@ -18,6 +18,8 @@ export interface CardActions {
   remove: (row: DeckCardRow) => void;
   moveBoard: (row: DeckCardRow, board: string) => void;
   moveCategory: (row: DeckCardRow, categoryId: string | null) => void;
+  /** click a card → open the card detail panel (PLAN §9) */
+  open: (row: DeckCardRow) => void;
 }
 
 const BOARD_TARGETS: { key: string; label: string }[] = [
@@ -172,9 +174,14 @@ function CardTile({
     <div
       className={`${styles.fanRow} ${menuOpen ? styles.rowOpen : ""}`}
       tabIndex={0}
+      role="button"
+      onClick={() => actions.open(row)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") actions.open(row);
+      }}
     >
       <GameCard card={row.card} quantity={row.quantity} />
-      <div className={styles.rowControls}>
+      <div className={styles.rowControls} onClick={(e) => e.stopPropagation()}>
         {canStep(deck, row) && (
           <QtyControls
             row={row}
@@ -199,11 +206,19 @@ function ListRow({
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   return (
-    <div className={`${styles.listRow} ${menuOpen ? styles.rowOpen : ""}`}>
+    <div
+      className={`${styles.listRow} ${menuOpen ? styles.rowOpen : ""}`}
+      role="button"
+      tabIndex={0}
+      onClick={() => actions.open(row)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") actions.open(row);
+      }}
+    >
       <span className={styles.listQty}>{row.quantity}</span>
       <span className={styles.listName}>{row.card.name}</span>
       <ManaCost cost={row.card.mana_cost} className={styles.listCost} />
-      <span className={styles.listControls}>
+      <span className={styles.listControls} onClick={(e) => e.stopPropagation()}>
         {canStep(deck, row) && (
           <QtyControls
             row={row}

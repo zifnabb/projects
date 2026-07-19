@@ -4,7 +4,7 @@
  * slice. View/group/sort live in URL params (shareable, survives reload).
  */
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { Search } from "lucide-react";
+import { BarChart3, Search } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { ManaCost } from "../../components/mtg/ManaCost";
 import type { AutocompleteResult } from "../../lib/types";
@@ -108,22 +108,26 @@ export function Toolbar({
   sort,
   hasCategories,
   searchOpen,
+  statsOpen,
   onView,
   onGroup,
   onSort,
   onAdd,
   onToggleSearch,
+  onToggleStats,
 }: {
   view: ViewAs;
   group: GroupBy;
   sort: SortBy;
   hasCategories: boolean;
   searchOpen: boolean;
+  statsOpen: boolean;
   onView: (v: ViewAs) => void;
   onGroup: (g: GroupBy) => void;
   onSort: (s: SortBy) => void;
   onAdd: (card: AutocompleteResult) => void;
   onToggleSearch: () => void;
+  onToggleStats: () => void;
 }) {
   return (
     <div className={styles.toolbar}>
@@ -186,6 +190,18 @@ export function Toolbar({
           <option value="name">Name</option>
           <option value="type">Type</option>
         </select>
+      </div>
+
+      <div className={styles.group}>
+        <span className={styles.groupLabel}>Stats</span>
+        <Button
+          variant={statsOpen ? "secondary" : "ghost"}
+          size="sm"
+          onClick={onToggleStats}
+        >
+          <BarChart3 size={14} aria-hidden="true" />
+          Deck stats
+        </Button>
       </div>
     </div>
   );

@@ -27,6 +27,7 @@ from app.models import Card, Printing
 from app.routers.admin import router as admin_router
 from app.routers.auth import router as auth_router
 from app.routers.decks import router as decks_router
+from app.routers.io import router as io_router
 from app.routers.search import router as search_router
 from app.scryfall.bulk import sync_bulk
 
@@ -102,6 +103,7 @@ app.include_router(api)
 app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(decks_router)
+app.include_router(io_router)
 app.include_router(search_router)
 
 

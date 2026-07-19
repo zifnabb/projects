@@ -1,5 +1,5 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { LogOut, Moon, Plus, Sun } from "lucide-react";
+import { LogOut, Moon, Plus, Settings, Shield, Sun } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "../ui/Button";
@@ -7,14 +7,18 @@ import { Wordmark } from "../ui/Wordmark";
 import { useTheme } from "../../theme/ThemeProvider";
 import { authApi } from "../../features/auth/api";
 import { useSession, useSetSession } from "../../features/auth/session";
+import { UnifiedSearch } from "./UnifiedSearch";
 import styles from "./TopBar.module.css";
 
-/**
- * App-shell top bar (DESIGN §6.2-A). The unified Cards↔Decks search lands here
- * with the card-panel slice; Invites/Admin menu items appear with the admin
- * screens.
- */
-export function TopBar({ onNewDeck }: { onNewDeck: () => void }) {
+/** App-shell top bar (DESIGN §6.2-A): wordmark · unified search · theme ·
+ * + New Deck · user menu (Account / Admin / sign out). */
+export function TopBar({
+  onNewDeck,
+  onOpenCard,
+}: {
+  onNewDeck: () => void;
+  onOpenCard: (oracleId: string) => void;
+}) {
   const { user } = useSession();
   const setSession = useSetSession();
   const navigate = useNavigate();
@@ -38,6 +42,8 @@ export function TopBar({ onNewDeck }: { onNewDeck: () => void }) {
         <Wordmark size="sm" />
       </Link>
 
+      <span className={styles.spacer} />
+      <UnifiedSearch onOpenCard={onOpenCard} />
       <span className={styles.spacer} />
 
       <div className={styles.right}>
@@ -73,6 +79,22 @@ export function TopBar({ onNewDeck }: { onNewDeck: () => void }) {
                 <div className={styles.menuName}>{user?.display_name}</div>
                 <div className={styles.menuUsername}>@{user?.username}</div>
               </div>
+              <DropdownMenu.Item
+                className={styles.menuItem}
+                onSelect={() => navigate("/account")}
+              >
+                <Settings size={16} aria-hidden="true" />
+                Account
+              </DropdownMenu.Item>
+              {user?.is_admin && (
+                <DropdownMenu.Item
+                  className={styles.menuItem}
+                  onSelect={() => navigate("/admin")}
+                >
+                  <Shield size={16} aria-hidden="true" />
+                  Admin
+                </DropdownMenu.Item>
+              )}
               <DropdownMenu.Item
                 className={styles.menuItem}
                 onSelect={() => logout.mutate()}

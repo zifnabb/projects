@@ -81,6 +81,7 @@
   position: relative;
   margin-bottom: -120.7%;
   transition: margin-bottom var(--motion-base) var(--ease-out);
+  cursor: pointer;
 }
 .fanRow:last-child {
   margin-bottom: 0;
@@ -166,6 +167,7 @@
   border-radius: var(--radius-sm);
   font-size: 13px;
   position: relative;
+  cursor: pointer;
 }
 .listRow:hover,
 .listRow.rowOpen {

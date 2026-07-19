@@ -24,11 +24,66 @@ export const decksApi = {
     api.patch<DeckFull>(`/api/decks/${id}`, body),
   addCard: (id: string, body: { oracle_id: string; board?: string; quantity?: number; category_id?: string | null }) =>
     api.post<DeckFull>(`/api/decks/${id}/cards`, body),
-  updateCard: (id: string, rowId: string, body: Partial<{ board: string; quantity: number; category_id: string | null }>) =>
+  updateCard: (id: string, rowId: string, body: Partial<{ board: string; quantity: number; category_id: string | null; printing_id: string | null }>) =>
     api.patch<DeckFull>(`/api/decks/${id}/cards/${rowId}`, body),
   removeCard: (id: string, rowId: string) =>
     api.del<DeckFull>(`/api/decks/${id}/cards/${rowId}`),
+
+  clone: (id: string) => api.post<DeckFull>(`/api/decks/${id}/clone`),
+  setVisibility: (id: string, visibility: "private" | "shared") =>
+    api.post<{ visibility: string; share_token: string | null }>(
+      `/api/decks/${id}/visibility`,
+      { visibility },
+    ),
+  remove: (id: string) => api.del<{ ok: boolean }>(`/api/decks/${id}`),
+  shared: (token: string) => api.get<DeckFull>(`/api/shared/${token}`),
+
+  export: (id: string, fmt: "text" | "arena" | "json") =>
+    api.get<{ format: string; filename: string; content: string }>(
+      `/api/io/decks/${id}/export?fmt=${fmt}`,
+    ),
+  importParse: (body: { text?: string; url?: string }) =>
+    api.post<ImportParseResult>("/api/io/import/parse", body),
+  importCommit: (body: {
+    mode: "new" | "add" | "replace";
+    deck_id?: string;
+    name?: string;
+    format?: string;
+    lines: ImportCommitLine[];
+    categories?: { name: string; target_min?: number | null; target_max?: number | null }[];
+  }) => api.post<DeckFull>("/api/io/import/commit", body),
 };
+
+export interface ImportLine {
+  input: string;
+  name: string;
+  quantity: number;
+  board: string;
+  category: string | null;
+  set_code: string | null;
+  collector_number: string | null;
+  oracle_id: string | null;
+  resolved_name: string | null;
+  fuzzy: boolean;
+}
+
+export interface ImportParseResult {
+  lines: ImportLine[];
+  unresolved: number;
+  fuzzy: number;
+  deck_name?: string | null;
+  format?: string | null;
+  categories?: { name: string; target_min?: number | null; target_max?: number | null }[];
+}
+
+export interface ImportCommitLine {
+  oracle_id: string;
+  quantity: number;
+  board: string;
+  category?: string | null;
+  set_code?: string | null;
+  collector_number?: string | null;
+}
 
 export function useDeck(id: string | undefined) {
   return useQuery({

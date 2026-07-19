@@ -82,6 +82,8 @@ export interface CardSummary {
   image?: Record<string, string>;
   /** singleton formats: only basics / "any number" cards may exceed 1 */
   multiples_ok?: boolean;
+  /** mana this card can produce (stats sidebar; e.g. ["G"], ["C"]) */
+  produced_mana?: string[] | null;
 }
 
 export interface DeckCardRow {

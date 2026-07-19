@@ -1,0 +1,300 @@
+/* Card detail panel (PLAN §9 / DESIGN §7.8) — e2 floating overlay dialog. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  z-index: var(--z-modal);
+}
+
+.content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(760px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-modal);
+  display: flex;
+  gap: var(--space-6);
+  padding: var(--space-6);
+}
+
+.left {
+  flex: 0 0 260px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.right {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.close {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  z-index: 1;
+}
+.close:hover {
+  background: var(--color-surface-sunken);
+  color: var(--color-text);
+}
+
+/* tabs — same underline grammar as Search */
+.tabList {
+  display: flex;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--space-5);
+  padding-right: var(--space-9); /* room for the ✕ */
+}
+.tab {
+  padding: var(--space-3) var(--space-4);
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.tab[data-state="active"] {
+  color: var(--color-text);
+  border-bottom-color: var(--color-accent);
+}
+
+.tabContent {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-right: var(--space-2);
+}
+.tabContent[hidden] {
+  display: none;
+}
+
+.nameRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+}
+.cardName {
+  font-family: var(--font-display);
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 600;
+  margin: 0;
+  flex: 1;
+}
+.typeLine {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.hairline {
+  height: 1px;
+  background: var(--color-border);
+}
+
+/* deck controls */
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.controlRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+.controlLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+  width: 64px;
+  flex-shrink: 0;
+}
+.select {
+  flex: 1;
+  height: 32px;
+  padding: 0 var(--space-4);
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 13px;
+  min-width: 0;
+}
+
+/* segmented board picker */
+.segmented {
+  display: flex;
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  gap: 2px;
+  flex: 1;
+}
+.segment {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  padding: var(--space-2) var(--space-2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.segment[data-active="true"] {
+  background: var(--color-surface-raised);
+  color: var(--color-accent);
+}
+
+.stepperRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.stepBtn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 15px;
+}
+.stepBtn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.stepQty {
+  min-width: 24px;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* More Info */
+.metaGrid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-2) var(--space-5);
+  font-size: 13px;
+}
+.metaKey {
+  color: var(--color-text-faint);
+}
+.legalityGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-2) var(--space-5);
+  font-size: 12px;
+}
+.legalRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.legalYes {
+  color: var(--color-success);
+  font-weight: 600;
+}
+.legalNo {
+  color: var(--color-text-faint);
+}
+.legalBanned {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+.setLink {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-accent);
+  font: inherit;
+  cursor: pointer;
+}
+.setLink:hover {
+  text-decoration: underline;
+}
+.printingRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  font-size: 12px;
+  padding: var(--space-2) 0;
+  color: var(--color-text-muted);
+}
+
+.sectionLabel {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+}
+
+/* Rulings */
+.ruling {
+  font-size: 13px;
+  line-height: 19px;
+  padding: var(--space-4);
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-sm);
+}
+.rulingDate {
+  font-size: 11px;
+  color: var(--color-text-faint);
+  margin-top: var(--space-2);
+}
+.quietNote {
+  font-size: 13px;
+  color: var(--color-text-faint);
+}
+
+@media (max-width: 720px) {
+  .content {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .left {
+    flex: none;
+    max-width: 260px;
+    margin: 0 auto;
+  }
+}
