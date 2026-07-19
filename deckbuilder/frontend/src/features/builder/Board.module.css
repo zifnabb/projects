@@ -1,5 +1,8 @@
-/* The Stacks board (DESIGN §6.3) — horizontally-scrolling row of columns. */
-.board {
+/* The board (DESIGN §6.3). Each view has its own geometry:
+   Stacks = horizontal row of fixed card-width columns (scrolls sideways);
+   List   = group blocks in a responsive grid wrapping DOWN the page;
+   Grid   = full-width group sections, card images wrap inside each. */
+.boardStacks {
   display: flex;
   align-items: flex-start;
   gap: var(--space-5);
@@ -8,9 +11,22 @@
   min-height: 60vh;
 }
 
+.boardList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  align-items: start;
+  gap: var(--space-5);
+  padding: var(--space-6);
+}
+
+.boardGrid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6);
+}
+
 .column {
-  /* 208px suits fanned card images (Stacks/Grid) */
-  flex: 0 0 208px;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -20,12 +36,9 @@
   gap: var(--space-4);
 }
 
-/* List view is text — let columns grow into the available space so card
-   names don't truncate while the board sits empty. */
-.columnWide {
-  flex: 1 1 280px;
-  min-width: 280px;
-  max-width: 480px;
+/* Stacks: fixed width tuned to fanned card images. */
+.boardStacks .column {
+  flex: 0 0 208px;
 }
 
 /* Column header (DESIGN §7.7) */
@@ -168,9 +181,8 @@
 .listName {
   flex: 1;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* full card names, always — wrap instead of truncating */
+  overflow-wrap: anywhere;
 }
 .listCost {
   flex-shrink: 0;
@@ -193,11 +205,11 @@
   color: var(--color-text);
 }
 
-/* ---- Grid view ------------------------------------------------------------ */
+/* ---- Grid view: card images wrap inside a full-width group section ------- */
 .gridWrap {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-4);
 }
 
 /* ⋯ menu (shared with column menus) */

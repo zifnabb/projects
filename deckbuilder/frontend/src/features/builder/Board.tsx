@@ -151,6 +151,12 @@ function ColumnHeader({ col }: { col: BoardColumn }) {
   );
 }
 
+const BOARD_CLASS: Record<ViewAs, string> = {
+  stacks: "boardStacks",
+  list: "boardList",
+  grid: "boardGrid",
+};
+
 export function Board({
   deck,
   columns,
@@ -163,13 +169,9 @@ export function Board({
   actions: CardActions;
 }) {
   return (
-    <div className={styles.board}>
+    <div className={styles[BOARD_CLASS[view]]}>
       {columns.map((col) => (
-        <section
-          key={col.key}
-          className={`${styles.column} ${view === "list" ? styles.columnWide : ""}`}
-          aria-label={col.name}
-        >
+        <section key={col.key} className={styles.column} aria-label={col.name}>
           <ColumnHeader col={col} />
 
           {col.rows.length === 0 ? (
