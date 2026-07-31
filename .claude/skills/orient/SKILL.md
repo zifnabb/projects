@@ -138,16 +138,28 @@ Open items as of 2026-07-31. Delete an entry once it's genuinely resolved.
    never executed (now annotated as such), and its "Current State" list claims stdio-only with no
    HTTP endpoint — yet `:8765` has a live listener. No MCP client is configured against the server
    either. Check `sudo ss -tlnp | grep 8765` before asserting anything about how it's reachable.
-2. **`/root/stacks/satisfactory/` holds 2.8 GB of save data.** The README now says so accurately;
-   the open question is whether the saves are wanted. Ask before reclaiming — deleting them is
-   irreversible.
-3. **Anything named `<hexid>_<name>`** is a half-finished AppArmor container swap. Rename it back:
+2. **`cloudflared` is not Dockge-managed.** Its compose labels point at
+   `/data/compose/2/docker-compose.yml` — a *Portainer* stack path left over from before the Dockge
+   migration. All 29 other containers point at `/root/stacks/*`. The service *is* correctly defined
+   in `/root/stacks/bigstackd/compose.yaml` with `TUNNEL_TOKEN` in that stack's `.env`, so
+   recreating it is well-defined — but it drops the tunnel and your SSH with it, so it must be run
+   detached. Command is in AGENTS.md → "TWO DOCKER DAEMONS". Until then, the one container carrying
+   all external access is outside Dockge's control.
+3. **`/var/lib/docker` (948 MB) is dead weight** — the disabled apt daemon's data root, holding
+   Portainer's images and volumes. Safe to `rm -rf`; nothing live reads it.
+4. **Anything named `<hexid>_<name>`** is a half-finished AppArmor container swap. Rename it back:
    the dashboard joins subdomains to containers on exact name, so the link breaks silently.
    (Vaultwarden was in this state until 2026-07-31.)
 
-An earlier drift audit on 2026-07-31 cleared four items — dead `Test-cases/` mirror claims in
-README/AGENTS, the Satisfactory deletion claim, the Vaultwarden container name, and two tracked
-`.DS_Store` files. The record is in AGENTS.md → "Re-verification (2026-07-31)".
+**If `docker ps` can't see a container you know is running**, check the containerd layer:
+`sudo ctr -n moby containers ls`. That is how a headless second daemon was found on 2026-07-31.
+Note also that **`sudo` strips `DOCKER_HOST`** — `sudo DOCKER_HOST=... docker ps` silently queries
+the default socket and returns confidently wrong answers. Use `sudo env DOCKER_HOST=unix://...`.
+
+Two audits on 2026-07-31 cleared six items — dead `Test-cases/` mirror claims, the Satisfactory
+deletion claim (then Satisfactory itself), the Vaultwarden container name, two tracked `.DS_Store`
+files, and an undocumented Portainer on a second Docker daemon. Records are in AGENTS.md →
+"Re-verification (2026-07-31)" and "TWO DOCKER DAEMONS".
 
 ## 9. Concurrent sessions
 

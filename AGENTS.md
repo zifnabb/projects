@@ -233,6 +233,49 @@ Prompted by building the `/orient` skill. Four drift items found and corrected:
 - **Vaultwarden container** was still named `ef214b409b07_vaultwarden` from an AppArmor container swap. Because `lavender-dashboard` joins subdomains to containers on exact name, its dashboard card had silently lost its link to `cinnabar.cooldad.top`. Renamed back to `vaultwarden` (no restart; uptime and health preserved). **Any time a swap leaves a `<hexid>_<name>` container, rename it back — the dashboard link breaks quietly.**
 - **`.DS_Store`** was tracked at the repo root and in `lavender-dashboard/app/` despite `.gitignore`; untracked via `git rm --cached`. `.claude/settings.local.json` added to `.gitignore` — it holds per-machine permission grants including a one-time Authentik recovery token.
 
+### TWO DOCKER DAEMONS — found and resolved (2026-07-31)
+
+Chasing the Satisfactory directory uncovered the real problem: **this host was running two Docker
+daemons simultaneously.**
+
+| Daemon | Data root | Held |
+|---|---|---|
+| `snap.docker.dockerd.service` | `/var/snap/docker/common/var-lib-docker` | the 30-container fleet |
+| `docker.service` (apt) | `/var/lib/docker` | Portainer, Portainer agent, Satisfactory |
+
+Snap had taken over both `/run/docker.sock` and `/var/run/docker.sock`, so the apt daemon ran
+**headless** — API unreachable, invisible to `docker ps`, Dockge, and the dashboard, but still
+alive and still enforcing its containers' restart policies. That is why Satisfactory respawned
+within seconds every time its processes were killed, and why an undocumented **Portainer** (ports
+9443 + 8000, bound to `0.0.0.0`, full Docker access) had been running unnoticed since boot.
+
+Resolution: `sudo systemctl stop docker.service docker.socket` then `disable`. The fleet was
+verified at 30 containers before, during, and after. `/root/stacks/satisfactory/` deleted (2.8 GB).
+`/var/lib/docker` (948 MB) left for manual removal.
+
+**Lessons worth keeping:**
+- If a container is clearly running but `docker ps` doesn't list it, check the containerd layer:
+  `sudo ctr -n moby containers ls`. It sees what a hijacked-socket daemon hides.
+- **`sudo` strips `DOCKER_HOST`.** `sudo DOCKER_HOST=... docker ps` silently queries the *default*
+  socket and returns plausible-looking wrong answers. Use `sudo env DOCKER_HOST=unix://... docker`.
+- Confirm daemon identity by data root, not by socket path: `docker info --format '{{.DockerRootDir}}'`.
+- `systemctl status docker.service` logs are a fast way to prove which daemon owns a container —
+  the apt daemon was visibly logging the Satisfactory container's Steam DNS lookups.
+
+**OUTSTANDING — `cloudflared` is not Dockge-managed.** An audit of all 30 containers' compose
+labels found 29 pointing at `/root/stacks/*` (plus `dockge-dockge-1` self-managing from
+`/root/dockge/`). The exception is **`cloudflared`**, whose
+`com.docker.compose.project.config_files` is **`/data/compose/2/docker-compose.yml`** — a
+*Portainer* stack path. It was created by Portainer pre-migration and has never been recreated
+(it was last merely `docker start`ed during the 2026-07-25 snap-refresh recovery), so it kept the
+old labels. `/root/stacks/bigstackd/compose.yaml` does define the service correctly and
+`TUNNEL_TOKEN` is present in that stack's `.env`, so recreating it is well-defined — but it drops
+the tunnel and therefore SSH, so it must be run detached:
+```sh
+sudo bash -c 'cd /root/stacks/bigstackd && setsid nohup bash -c "docker compose up -d cloudflared" > /tmp/cf.log 2>&1 &'
+```
+Until that is done, Dockge cannot manage the one container that carries all external access.
+
 ### MCP Test Cleanup (2026-06-24)
 During the final phase of MCP server repairs (per-service tools, dry_run, force, plan_action) and Invidious-style stop/start tests:
 - ~12+ stray `lavender-mcp-*` containers existed (named with -old, -new, -test, -test2, -final*, -repaired*, -repair* suffixes) from repeated `docker run` + port 8765-9 tests.
