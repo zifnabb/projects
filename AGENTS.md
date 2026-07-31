@@ -250,8 +250,10 @@ within seconds every time its processes were killed, and why an undocumented **P
 9443 + 8000, bound to `0.0.0.0`, full Docker access) had been running unnoticed since boot.
 
 Resolution: `sudo systemctl stop docker.service docker.socket` then `disable`. The fleet was
-verified at 30 containers before, during, and after. `/root/stacks/satisfactory/` deleted (2.8 GB).
-`/var/lib/docker` (948 MB) left for manual removal.
+verified at 30 containers before, during, and after. `/root/stacks/satisfactory/` deleted (2.8 GB)
+and `/var/lib/docker` deleted (948 MB). The apt `docker` package remains installed with its units
+disabled — purge it if the binaries should go too, but note `/usr/bin/docker` is the CLI the fleet
+is driven with, so check what a purge would remove before running one.
 
 **Lessons worth keeping:**
 - If a container is clearly running but `docker ps` doesn't list it, check the containerd layer:

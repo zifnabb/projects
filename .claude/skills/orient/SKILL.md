@@ -145,9 +145,7 @@ Open items as of 2026-07-31. Delete an entry once it's genuinely resolved.
    recreating it is well-defined — but it drops the tunnel and your SSH with it, so it must be run
    detached. Command is in AGENTS.md → "TWO DOCKER DAEMONS". Until then, the one container carrying
    all external access is outside Dockge's control.
-3. **`/var/lib/docker` (948 MB) is dead weight** — the disabled apt daemon's data root, holding
-   Portainer's images and volumes. Safe to `rm -rf`; nothing live reads it.
-4. **Anything named `<hexid>_<name>`** is a half-finished AppArmor container swap. Rename it back:
+3. **Anything named `<hexid>_<name>`** is a half-finished AppArmor container swap. Rename it back:
    the dashboard joins subdomains to containers on exact name, so the link breaks silently.
    (Vaultwarden was in this state until 2026-07-31.)
 

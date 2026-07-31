@@ -165,6 +165,6 @@ The `bkstacker` stack on the server is the original monolith that all current st
   - `snap.docker.dockerd.service` (root `/var/snap/docker/common/var-lib-docker`) — the 30-container fleet, and the daemon both `/run/docker.sock` and `/var/run/docker.sock` actually answer on.
   - `docker.service` (apt, root `/var/lib/docker`) — held only Portainer, its agent, and Satisfactory. Snap had taken over its socket path, so it ran **headless**: `docker ps` could not see its containers, but it kept enforcing their restart policies. Killing those containers by PID just respawned them.
   - Resolution: `docker.service` and `docker.socket` stopped and **disabled**. The fleet was unaffected throughout. Diagnostic worth keeping: `sudo ctr -n moby containers ls` sees containers `docker ps` cannot.
-  - **Outstanding**: `/var/lib/docker` (948 MB — Portainer's images and its `portainer_data` / `portainer_agent_data` volumes) is still on disk and safe to `rm -rf`.
+  - `/var/lib/docker` (948 MB — Portainer's images and its `portainer_data` / `portainer_agent_data` volumes) deleted 2026-07-31. The apt `docker` package itself is still installed but its units are disabled; purge it if you want the binaries gone too.
 
 These services have been fully purged from Docker and the stack layout. Documentation has been annotated; they can be reintroduced later if needed.
