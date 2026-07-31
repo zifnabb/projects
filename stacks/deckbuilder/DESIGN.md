@@ -243,7 +243,7 @@ Target is **desktop-first** (deckbuilding is a large-screen activity; the refere
 - **≥1280px** — full builder shell; pinned rails allowed alongside a multi-column board.
 - **1024–1279px** — rails default to overlay (unpinned) so the board keeps room; toolbar labels may wrap to icon+tooltip if cramped.
 - **768–1023px (tablet)** — single rail overlay at a time; board scrolls horizontally; top-bar search collapses to an icon that expands.
-- **<768px (phone, best-effort)** — the app is usable but not optimized: board becomes a single vertical list of columns (stacked, not side-by-side); header controls collapse into a ⋯ menu; New Deck and Card panel become full-screen sheets. **Explicitly out of MVP polish scope** (private tool, desktop use) — but the token/flex system must not *prevent* it. Note this as an open item.
+- **≤767px (phone)** — **IMPLEMENTED 2026-07-31** (was deferred as best-effort; commit `be8b538`, adversarially reviewed + on-device verified at 390px/375×667). The realized design: TopBar → two-row header (brand + icon actions, then full-width search) rather than a ⋯ menu; board → one full-width column of category sections; Search + Stats rails and Card panel / New Deck / Category / Import modals → **full-screen sheets** (z-overlay/z-modal, overscroll-contained, ≥40px close). Editing is **tap-first**: tap a card → full-screen card panel (qty/printing/category/board/remove); quick-add + search sheet to add; category reorder via ↑↓ buttons (HTML5 drag doesn't fire on touch). Foundation in `tokens.css` (`overflow-x: clip` guard, 16px form fonts, safe-area insets); breakpoint = `max-width: 767px`. **Known deferred (low):** header keyboard focus-order zig-zags because the two-row layout uses CSS `order` (touch-first surface; a DOM reorder would risk the desktop header). Tablet 768–1023px still uses the desktop layout (graceful, rails toggle).
 
 ---
 
@@ -459,14 +459,14 @@ Aligns with PLAN §4 (React SPA, Vite+TS, served static by FastAPI) and §17 bui
 - **Type (locked):** `Cinzel` display (headings/labels/names) + `Libre Franklin` body & oracle (both OFL, in `brand/`) + Mana font + Keyrune (symbols) + optional mono for syntax/JSON. Inter dropped (too neutral); serif body candidates (Alegreya, Crimson Pro) dropped (lower x-height → read too small in dense UI). No attempt to imitate Beleren.
 - **Wordmark = Sanguine Frost, all-caps** (§2) — locked. Display-only, personal-use license (asset in `brand/`), needs ≥1.35 line-height due to glyph overshoot.
 - **Icons:** Lucide. **Primitives:** Radix — **confirmed 2026-07-19** (unstyled, skinned with our tokens; charts stay bespoke SVG).
-- **Desktop-first**, tablet-graceful, phone best-effort (§6.4) — **confirmed 2026-07-19** (phone stays out of MVP polish scope; architecture must not preclude it).
+- **Desktop-first**, tablet-graceful, **phone fully supported** (§6.4) — deferred at 2026-07-19, then **built + reviewed 2026-07-31** (commit `be8b538`).
 
 **Open items (need a call before/while building the relevant phase):**
 - **Font licensing/self-hosting** — Inter + Mana + Keyrune are open-licensed, self-host fine. **Sanguine Frost (wordmark) is personal-use only** — acceptable for this private tool (resolved), but flagged as the one non-open face: it must be swapped if vermilion ever goes public/commercial.
 - ~~**Radix vs hand-rolled primitives**~~ — **RESOLVED 2026-07-19: Radix** for behavioral primitives (tabs/dialog/popover/menu/tooltip/toggle), skinned with our tokens; bespoke for all visuals (card, Stacks board, pip bars, charts).
 - **Stacks fan density / row overlap %** — tune against real card counts once the board exists (the reference uses ~72%; verify legibility of the name bar).
 - **Light-theme card-art treatment** — card art is designed for dark frames; on the light theme, confirm the identity tint + border keep cards from "floating." (Lean: a subtle `surface`-colored mat behind full-card images in light theme.)
-- ~~**Phone board layout**~~ (§6.4) — **RESOLVED 2026-07-19: desktop-first, phone best-effort** (stacked vertical columns, out of MVP polish scope; token/flex system must keep it *possible* to promote later).
+- ~~**Phone board layout**~~ (§6.4) — **DONE 2026-07-31**: board is one full-width column of category sections on phone; rails/modals are full-screen sheets; tap-first editing. Implemented + adversarially reviewed (commit `be8b538`).
 - **Deck-card image source** — commander art crop vs full-card thumbnail for the dashboard tile (lean: art-crop for a cleaner grid).
 - **High-contrast / OLED-black theme** — worth a third `[data-theme]` block post-MVP? (Architecture already supports it.)
 
