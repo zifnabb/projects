@@ -4,11 +4,17 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.deps import get_current_user
 from app.db import get_session
 from app.scryfall import search as sf
 from app.search_compiler import compile_query
 
-router = APIRouter(prefix="/api", tags=["search"])
+# Login-gated like decks/io/admin: card data is public MTG info, but /search
+# proxies Scryfall under our User-Agent, so leaving it open is an unauthenticated
+# request amplifier that can saturate the shared throttle. The only public view
+# (/shared/<token>, in decks.py) renders from its own payload and calls nothing
+# here. (Security review 2026-07-30, finding #1.)
+router = APIRouter(prefix="/api", tags=["search"], dependencies=[Depends(get_current_user)])
 
 
 class CompileRequest(BaseModel):

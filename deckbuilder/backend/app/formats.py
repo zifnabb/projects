@@ -61,6 +61,15 @@ def validate_deck(format_key: str, deck, card_map: dict, deck_cards: list) -> di
     counted = [dc for dc in deck_cards if dc.board in ("main", "command")]
     total = sum(dc.quantity for dc in counted)
 
+    # Aggregate quantity per card. Singleton is a per-CARD rule, and one card can
+    # occupy several rows when copies carry different printings (same oracle_id),
+    # so a per-row `quantity > 1` check misses 1+1 duplicates. Evaluating every
+    # card-level rule per unique oracle_id also stops reasons double-listing when
+    # a card is split across rows. (Security review 2026-07-30, finding #2.)
+    qty_by_oracle: dict[str, int] = {}
+    for dc in counted:
+        qty_by_oracle[dc.oracle_id] = qty_by_oracle.get(dc.oracle_id, 0) + dc.quantity
+
     if fmt["requires_commander"]:
         cmd_id = deck.commander_oracle_id
         if not cmd_id:
@@ -77,8 +86,8 @@ def validate_deck(format_key: str, deck, card_map: dict, deck_cards: list) -> di
     identity = set(deck.color_identity or [])
     enforce_ci = fmt["enforce_color_identity"] and bool(deck.commander_oracle_id)
 
-    for dc in counted:
-        card = card_map.get(dc.oracle_id)
+    for oracle_id, qty in qty_by_oracle.items():
+        card = card_map.get(oracle_id)
         if card is None:
             continue
         status = (card.legalities or {}).get(format_key)
@@ -90,8 +99,8 @@ def validate_deck(format_key: str, deck, card_map: dict, deck_cards: list) -> di
         if enforce_ci and not set(card.color_identity or []) <= identity:
             reasons.append(f"{card.name} is outside the commander's color identity.")
 
-        if fmt["singleton"] and dc.quantity > 1 and not _any_number_allowed(card):
-            reasons.append(f"{card.name} appears {dc.quantity}× (singleton allows one).")
+        if fmt["singleton"] and qty > 1 and not _any_number_allowed(card):
+            reasons.append(f"{card.name} appears {qty}× (singleton allows one).")
 
     return {
         "legal": not reasons,

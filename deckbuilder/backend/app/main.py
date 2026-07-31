@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.deps import get_current_admin
 from app.bootstrap import ensure_admin
+from app.cache_maintenance import purge_expired_cache
 from app.config import get_settings
 from app.db import get_session
 from app.http_adapter import aclose as http_aclose
@@ -40,9 +41,28 @@ STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 scheduler = BackgroundScheduler()
 _sync_lock = asyncio.Lock()
 
+# Shipped-default secrets (config.py). Safe in dev; forgeable if they ever reach
+# production, so we fail closed there. (Security review 2026-07-30, finding #4.)
+_INSECURE_DEFAULTS = {
+    "jwt_secret": "dev-insecure-change-me",
+    "admin_password": "changeme",
+}
+
+
+def _guard_secrets() -> None:
+    if settings.environment == "development":
+        return
+    leaked = [name for name, default in _INSECURE_DEFAULTS.items() if getattr(settings, name) == default]
+    if leaked:
+        raise RuntimeError(
+            f"refusing to start in environment={settings.environment!r} with default "
+            f"{', '.join(leaked)} — set real value(s) in .env"
+        )
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    _guard_secrets()
     # Nightly Scryfall bulk sync (runs sync_bulk in the scheduler's worker thread).
     scheduler.add_job(
         sync_bulk,
@@ -51,8 +71,16 @@ async def lifespan(app: FastAPI):
         replace_existing=True,
         misfire_grace_time=3600,
     )
+    # reap expired api_cache rows (finding #6), after the nightly sync
+    scheduler.add_job(
+        purge_expired_cache,
+        CronTrigger(hour=4, minute=30),
+        id="api_cache_purge",
+        replace_existing=True,
+        misfire_grace_time=3600,
+    )
     scheduler.start()
-    log.info("scheduler started (scryfall nightly sync @ 04:00)")
+    log.info("scheduler started (scryfall sync @ 04:00, api_cache purge @ 04:30)")
     await ensure_admin()
     try:
         yield
@@ -113,12 +141,19 @@ if (STATIC_DIR / "index.html").is_file():
     if assets_dir.is_dir():
         app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
+    _static_root = STATIC_DIR.resolve()
+
     @app.get("/{full_path:path}")
     async def spa(full_path: str) -> FileResponse:
         # Never let unmatched API paths fall through to the SPA — 404 them.
         if full_path.startswith("api/") or full_path == "api":
             raise HTTPException(status_code=404, detail="not found")
-        candidate = STATIC_DIR / full_path
-        if full_path and candidate.is_file():
-            return FileResponse(candidate)
+        if full_path:
+            candidate = (STATIC_DIR / full_path).resolve()
+            # containment: only serve real files that stay under static/ (defense
+            # in depth vs path traversal — finding #7). Anything else → SPA shell.
+            if (
+                candidate == _static_root or _static_root in candidate.parents
+            ) and candidate.is_file():
+                return FileResponse(candidate)
         return FileResponse(STATIC_DIR / "index.html")

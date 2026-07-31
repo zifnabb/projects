@@ -190,11 +190,15 @@ def _card_summary(card: Card | None, printing: Printing | None = None) -> dict:
     }
 
 
-def _card_issues(deck: Deck, fmt: dict, dc: DeckCard, card: Card | None) -> list[str]:
+def _card_issues(
+    deck: Deck, fmt: dict, dc: DeckCard, card: Card | None, oracle_total: int | None = None
+) -> list[str]:
     """Per-row legality problems (yellow highlight in the UI) — same rules as
     validate_deck, but evaluated per card so the board can flag offenders.
     Format/identity issues flag every board; the singleton cap only counts
-    main+command (matching the deck-level check)."""
+    main+command (matching the deck-level check). `oracle_total` is the summed
+    main+command quantity for this card across all its rows, so duplicates split
+    across printing rows still highlight (finding #2); falls back to this row."""
     if card is None:
         return []
     issues: list[str] = []
@@ -206,13 +210,14 @@ def _card_issues(deck: Deck, fmt: dict, dc: DeckCard, card: Card | None) -> list
     if fmt["enforce_color_identity"] and deck.commander_oracle_id:
         if not set(card.color_identity or []) <= set(deck.color_identity or []):
             issues.append("Outside the commander's color identity")
+    total = oracle_total if oracle_total is not None else dc.quantity
     if (
         fmt["singleton"]
         and dc.board in ("main", "command")
-        and dc.quantity > 1
+        and total > 1
         and not allows_any_number(card)
     ):
-        issues.append(f"Appears {dc.quantity}× (singleton allows one)")
+        issues.append(f"Appears {total}× (singleton allows one)")
     return issues
 
 
@@ -242,6 +247,13 @@ async def _serialize_full(session: AsyncSession, deck: Deck) -> dict:
         )
     ).scalars().all()
     tags = (await session.execute(select(DeckTag).where(DeckTag.deck_id == deck.id))).scalars().all()
+
+    # summed main+command quantity per card, so a copy split across printing rows
+    # highlights every row (matches validate_deck's per-card singleton check, #2)
+    counted_by_oracle: dict[str, int] = {}
+    for dc in cards:
+        if dc.board in ("main", "command"):
+            counted_by_oracle[dc.oracle_id] = counted_by_oracle.get(dc.oracle_id, 0) + dc.quantity
 
     return {
         "id": deck.id,
@@ -282,7 +294,9 @@ async def _serialize_full(session: AsyncSession, deck: Deck) -> dict:
                     cmap.get(dc.oracle_id),
                     pmap.get(dc.printing_id) if dc.printing_id else None,
                 ),
-                "issues": _card_issues(deck, fmt, dc, cmap.get(dc.oracle_id)),
+                "issues": _card_issues(
+                    deck, fmt, dc, cmap.get(dc.oracle_id), counted_by_oracle.get(dc.oracle_id)
+                ),
             }
             for dc in cards
         ],
@@ -429,6 +443,10 @@ async def update_deck(
     if "description" in data:
         deck.description = data["description"]
     if "format" in data and data["format"]:
+        # validate like create_deck — an unknown format silently resolves to
+        # freeform via get_format and disables all legality enforcement (#5)
+        if data["format"] not in FORMATS:
+            raise HTTPException(status_code=400, detail="unknown format")
         deck.format = data["format"]
     if "deck_art_oracle_id" in data:
         deck.deck_art_oracle_id = data["deck_art_oracle_id"]
@@ -523,17 +541,32 @@ async def add_card(
     # singleton formats cap non-exempt cards at quantity 1 (basics etc. exempt)
     singleton_capped = get_format(deck.format)["singleton"] and not allows_any_number(card)
     quantity = 1 if singleton_capped else body.quantity
-    # merge: same oracle+board+printing -> sum quantities
-    existing = (
-        await session.execute(
-            select(DeckCard).where(
-                DeckCard.deck_id == deck.id,
-                DeckCard.oracle_id == body.oracle_id,
-                DeckCard.board == body.board,
-                DeckCard.printing_id.is_(body.printing_id) if body.printing_id is None else DeckCard.printing_id == body.printing_id,
+    if singleton_capped:
+        # A capped card can only ever be one copy, so merge into ANY existing row
+        # for this (oracle, board) regardless of printing — otherwise re-adding a
+        # card whose row already carries a specific printing spawns a second row,
+        # and two rows of qty 1 read as "Legal". (Security review, finding #2.)
+        existing = (
+            await session.execute(
+                select(DeckCard).where(
+                    DeckCard.deck_id == deck.id,
+                    DeckCard.oracle_id == body.oracle_id,
+                    DeckCard.board == body.board,
+                )
             )
-        )
-    ).scalar_one_or_none()
+        ).scalars().first()
+    else:
+        # merge: same oracle+board+printing -> sum quantities
+        existing = (
+            await session.execute(
+                select(DeckCard).where(
+                    DeckCard.deck_id == deck.id,
+                    DeckCard.oracle_id == body.oracle_id,
+                    DeckCard.board == body.board,
+                    DeckCard.printing_id.is_(body.printing_id) if body.printing_id is None else DeckCard.printing_id == body.printing_id,
+                )
+            )
+        ).scalar_one_or_none()
     if existing is not None:
         existing.quantity = 1 if singleton_capped else existing.quantity + quantity
         if body.category_id is not None:
