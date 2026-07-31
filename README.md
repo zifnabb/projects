@@ -31,6 +31,9 @@ Documentation and Docker Compose configurations for managing homelab container s
 | [mailserver](stacks/mailserver/) | Self-hosted email | Docker Mailserver, SnappyMail |
 | [lavender-dashboard](stacks/lavender-dashboard/) | Dashboard | LavenderTown Dashboard |
 | [mcp](stacks/mcp/) | MCP server for local AI | lavender-mcp (Docker + stack management tools) |
+| [deckbuilder](stacks/deckbuilder/) | Private MTG deck builder | deckbuilder (`vermilion`) + deckbuilder-postgres |
+
+**Deckbuilder ("vermilion") — live since 2026-07-19** at [vermilion.cooldad.top](https://vermilion.cooldad.top): a private, invite-only, Commander-focused MTG deck builder (Archidekt-style, zero community surface). React SPA + FastAPI + PostgreSQL, custom-build stack (tar → `/root/stacks/deckbuilder/` → `build: .`); app's own invite-only login, **no Authentik**. Cloudflare Tunnel route: `http://localhost:80` (plain HTTP into NPM — an `https://` scheme there causes 502 "not a TLS handshake"). Full 19-section design in [stacks/deckbuilder/PLAN.md](stacks/deckbuilder/PLAN.md); status + infra in [stacks/deckbuilder/README.md](stacks/deckbuilder/README.md); dev loop + redeploy steps in [deckbuilder/README.md](deckbuilder/README.md).
 
 ## Port Map
 
@@ -146,9 +149,7 @@ For most stacks, `docker-compose.yml` is also present (mirrors what Dockge manag
 
 Not yet **publicly shipped** — ports/subdomains reserved here to avoid collisions. These deliberately stay out of the live Port Map / Subdomains tables and the dashboard config until they're reachable via NPM/Cloudflare.
 
-*(none currently)*
-
-**Deckbuilder ("vermilion") — LIVE as of 2026-07-19** at [vermilion.cooldad.top](https://vermilion.cooldad.top): a private, invite-only, Commander-focused MTG deck builder (Archidekt-style, zero community surface). React SPA + FastAPI + PostgreSQL, custom-build stack (tar → `/root/stacks/deckbuilder/` → `build: .`); app's own invite-only login, **no Authentik**. Cloudflare Tunnel route: `http://localhost:80` (plain HTTP into NPM — an `https://` scheme there causes 502 "not a TLS handshake"). Full 19-section design in [stacks/deckbuilder/PLAN.md](stacks/deckbuilder/PLAN.md); operational notes + redeploy steps in [deckbuilder/README.md](deckbuilder/README.md).
+*(none currently — Deckbuilder shipped 2026-07-19 and now lives under [Stacks](#stacks).)*
 
 ## Legacy
 

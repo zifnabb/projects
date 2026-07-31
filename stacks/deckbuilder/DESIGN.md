@@ -4,7 +4,7 @@
 >
 > **Rendered companion:** an interactive HTML version of this system (live swatches, dark/light toggle, component states, screen mockups) is published as an Artifact — see the link shared alongside this doc. This Markdown file is the **canonical source**; the artifact is a rendering of it.
 >
-> **Status:** design language proposed, not yet implemented. Grounded in the three in-repo Archidekt reference shots (`ref_builder_groupby_type.png`, `ref_builder_groupby_categories.png`, `ref_deckbuilding_template.png`).
+> **Status:** **implemented** across Phases 5–6 and live at `vermilion.cooldad.top` (tokens, components, both themes). Grounded in the three in-repo Archidekt reference shots (`ref_builder_groupby_type.png`, `ref_builder_groupby_categories.png`, `ref_deckbuilding_template.png`). Where the built UI has since diverged from a spec here (feedback pass 1 — Grid view, Game Changer chips, DFC flip control), the **code is the truth**; this doc records the intent.
 
 ---
 
@@ -35,7 +35,7 @@ Five principles, derived from PLAN §1 and the "private, calm, no-community" pos
 
 ## 3. Color system
 
-Three layers, all expressed as CSS custom properties (§10): **(A) neutral UI palette** (theme-dependent), **(B) brand + semantic** (mostly theme-stable, with per-theme tuning), **(C) MTG domain colors** (WUBRG identity + rarity — mostly theme-stable, tuned for contrast per theme).
+Three layers, all expressed as CSS custom properties (§10): **(A) neutral UI palette** (theme-dependent), **(B) brand + semantic** (mostly theme-stable, with per-theme tuning), **(C) MTG domain colors** (WUBRG identity + rarity — theme-stable; the only per-theme value is the identity **tint alpha**, §3.4. The identity hexes were authored once and have not been contrast-tuned per theme.)
 
 ### 3.1 Neutral UI palette
 
@@ -106,6 +106,8 @@ The domain palette. Every card, deck, and search filter carries a **color identi
 
 Each identity color defines **four** values: a **pip fill**, **pip text/edge**, a **solid** (for bars/accents), and a **tint** (translucent, for row backgrounds and identity glows). Values below are theme-stable except where the tint alpha differs.
 
+> **Contrast audit (2026-07-30), first ever run on these values.** Result: every rendered pip is **detectable** in both themes — `max(fill, ring)` clears 3:1 everywhere W/U/B/R/G/C render. Two caveats: (1) `ColorPipBar` uses the **`glyph`** token as the pip's *outer ring*, but `glyph` is specified as the *interior* text/edge color, so its polarity is wrong for one theme or the other — in dark, W/C/M rings sit at 1.3–2.3:1; in light, U/B/R/G rings sit at ~1.1:1. The pip survives on its fill either way, so this is fragility, not a failure. (2) **Real gap:** in the **light** theme the StatsSidebar color bars put `W solid` at **1.15:1** and `C solid` at **1.70:1** against the `--color-surface-sunken` track (G marginal at 2.81:1) — a white- or colorless-heavy deck's Cost/Production bar reads as empty, and unlike pips these segments have no ring to fall back on. Separately, touching segments are low-contrast against each other (R↔G **1.39:1**, B↔R 1.56, G↔C 1.66, U↔B 1.70); not a 1.4.11 violation for data series, but hairline track-colored separators would fix it.
+
 | Identity | Pip fill | Pip glyph | Solid | Notes |
 |---|---|---|---|---|
 | **W** White | `#F7F3D8` | `#5B5637` | `#E4DCA8` | Warm parchment; needs a border in both themes (nearly invisible on light) |
@@ -116,6 +118,8 @@ Each identity color defines **four** values: a **pip fill**, **pip text/edge**, 
 | **C** Colorless | `#B9B4AE` | `#3A3833` | `#B9B4AE` | Also used for artifacts/Wastes |
 | **M** Multicolor | `#D9A63A` | `#3A2F10` | `#D9A63A` | Gold — for 2+ color cards' pip-cluster fallback and gold frame |
 | **Land** | `#B08A5E` | `#F2EADF` | `#B08A5E` | Neutral brown for the land grouping |
+
+> **NOT IMPLEMENTED (audited 2026-07-30).** The identity-tint block below never shipped: the Stacks board went **art-forward** (overlapping card-image fans) instead of tinted text rows, so there is no per-row identity frame. `--identity-tint-alpha`, `--wubrg-m-*`, and `--wubrg-land-*` are **dead tokens** with zero consumers. Only `-fill`/`-glyph` (ColorPipBar) and `-solid` (StatsSidebar bars) are live. Decide whether to revive the tint or cut the spec.
 
 **Identity tint (card-row frame).** In the Stacks board, each card row sits in a frame tinted by the card's identity — the headline visual texture of the whole app (see reference shots: red cards get warm-crimson frames, blue cards blue, etc.).
 - Single-color card → tint = that color's `solid` at **14%** alpha (dark) / **10%** (light), with a 1px left border at the `solid` full color.
