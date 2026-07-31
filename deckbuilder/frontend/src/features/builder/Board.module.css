@@ -319,7 +319,8 @@
     flex-direction: column;
     gap: var(--space-4);
     padding: var(--space-4);
-    padding-bottom: calc(var(--space-9) + env(safe-area-inset-bottom));
+    /* clear the fixed bottom action bar (~54px) + home indicator */
+    padding-bottom: calc(72px + env(safe-area-inset-bottom));
   }
   .lane,
   .listLane {
@@ -329,7 +330,8 @@
   }
   .boardGrid {
     padding: var(--space-4);
-    padding-bottom: calc(var(--space-9) + env(safe-area-inset-bottom));
+    /* clear the fixed bottom action bar (~54px) + home indicator */
+    padding-bottom: calc(72px + env(safe-area-inset-bottom));
   }
   /* two card images across on a phone */
   .gridWrap {

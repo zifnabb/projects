@@ -12,6 +12,7 @@ import { decksApi, useDeck, useDeckMutation } from "../decks/api";
 import { CardPanel, type CardPanelState } from "../cardpanel/CardPanel";
 import { SearchPanel } from "../search/SearchPanel";
 import { Board, type CardActions } from "./Board";
+import { BottomBar } from "./BottomBar";
 import { CategoryManager } from "./CategoryManager";
 import { DeckHeader } from "./DeckHeader";
 import { ImportModal } from "./ImportModal";
@@ -221,6 +222,14 @@ export function BuilderPage() {
         open={categoriesOpen}
         onOpenChange={setCategoriesOpen}
         deck={deck}
+      />
+
+      <BottomBar
+        searchOpen={searchOpen}
+        statsOpen={statsOpen}
+        onToggleSearch={() => setParam("search", searchOpen ? "0" : "1")}
+        onToggleStats={() => setParam("stats", statsOpen ? "0" : "1")}
+        onManageCategories={() => setCategoriesOpen(true)}
       />
     </div>
   );
