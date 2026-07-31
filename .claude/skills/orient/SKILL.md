@@ -1,0 +1,155 @@
+---
+name: orient
+description: Load working context for the LavenderTown homelab and the projects in this repo — server topology, access patterns, the deploy playbook, and per-project status — then probe live server state. Use at the start of a session, before acting on the server, or when the task involves stacks, containers, subdomains, ports, deckbuilder/vermilion, the dashboard, or the MCP server. An optional argument (deckbuilder | dashboard | mcp | stacks | testcases) narrows the deep-dive to one project.
+---
+
+# Orient — LavenderTown homelab
+
+## 1. Mental model
+
+**This repo is a mirror and a doc set. It is not the deploy target.** The running system is
+`/root/stacks/` on LavenderTown; deploys are rsync/tar → Dockge → rebuild. Changing a compose
+file here has zero effect until it is synced and rebuilt.
+
+Three consequences:
+- Never report something as "fixed" or "changed" on the strength of a local edit alone.
+- Docs here drift from the server. When a fact matters, **probe** (§2) rather than trust.
+- The server is the source of truth for state; this repo is the source of truth for *intent*.
+
+## 2. Probe live state
+
+Run this first for anything operational. Takes ~5s.
+
+```bash
+ssh -o BatchMode=yes -o ConnectTimeout=15 mrfuji@diglettscave.cooldad.top '
+  hostname; uptime
+  echo "--- containers ---"
+  sudo docker ps -a --format "{{.Names}}\t{{.Status}}" | sort
+  echo "--- stack dirs ---"
+  sudo ls /root/stacks/
+  echo "--- disks ---"
+  df -h | grep -E "^/dev|mnt"
+'
+```
+
+**Healthy baseline: 30 containers, all `Up`.** Anything `Exited`, or a count well under 30,
+is the finding — see §5 for the two failure modes that produce it.
+
+Public edge check (only if a subdomain is reported broken):
+
+```bash
+for h in vermilion celadon photos; do
+  printf "%-14s " "$h"
+  curl -s -o /dev/null -w "%{http_code}\n" --max-time 10 "https://$h.cooldad.top/"
+done
+```
+
+`200`/`302` = healthy. **`530` (Cloudflare 1033) = `cloudflared` or `npm` is down, not the
+internet.** Get in past the tunnel with `ssh -o ProxyCommand=none mrfuji@192.168.1.222`.
+
+## 3. Hosts and access
+
+| Host | Reach it with |
+|---|---|
+| **LavenderTown** (`192.168.1.222`) | `ssh mrfuji@diglettscave.cooldad.top` (Cloudflare Tunnel) |
+| **terrenceb-dl** (`10.33.22.17`) | nested: `ssh mrfuji@diglettscave.cooldad.top "ssh terrenceb@10.33.22.17 '<cmd>'"` |
+
+Three rules that cause most first-session failures:
+
+1. `/root/stacks/` requires `sudo` for `mrfuji` (passwordless sudo is on).
+2. **`cd /root/stacks/...` fails even under sudo** — traversal happens before sudo applies.
+   Use `sudo bash -c "cd /root/stacks/<stack> && ..."`.
+3. Always pass `-o BatchMode=yes -o ConnectTimeout=15` so a prompt can't hang the session.
+
+Full transfer patterns, the double-hop rsync, and tunnel ports: **`references/access.md`**.
+
+## 4. Topology
+
+```
+Internet → Cloudflare Tunnel (cloudflared, bigstackd) → NPM :80/:443 (infra)
+             → service :port      [most protected by Authentik forward auth]
+```
+
+- Tunnel routes are configured in the **Cloudflare Zero Trust dashboard**, not in any local
+  `config.yml`. Everything lands on NPM, which does the real routing by subdomain.
+- NPM's SQLite DB (`/data/database.sqlite`) is the source of truth; it regenerates the nginx
+  conf files on restart, so direct conf edits silently revert.
+- NPM runs host-networked, so the `HTTP_PORT`/`HTTPS_PORT` env vars in its compose are ignored —
+  it binds 80/81/443 regardless.
+
+Eight stacks: `bigstackd` (Pi-hole, cloudflared, Vaultwarden, Authentik) · `infra` (NPM, Uptime
+Kuma, Baikal) · `databases` (4× Postgres, 1× Redis) · `media` (Jellyfin, *arr, Immich, Invidious)
+· `mailserver` · `lavender-dashboard` · `mcp` · `deckbuilder`.
+
+**Do not duplicate the port map or subdomain table here** — they live in [README.md](../../../README.md)
+and drift the moment there are two copies. Read them there when you need them.
+
+## 5. Non-negotiables
+
+- **Restarting the whole `bigstackd` stack takes down `cloudflared`, which takes down all
+  remote access including SSH.** Restart `authentik-server authentik-worker` individually.
+- **snap-Docker AppArmor intermittently blocks `docker stop`/`kill`/`compose down`** with
+  "permission denied". The container keeps running. Redeploys need the PID-kill sequence in
+  `references/deploy.md`. Never assume a stop succeeded — verify.
+- **Snap docker auto-refresh is held** (`snap refresh --hold docker`). An auto-refresh on
+  2026-07-25 force-stopped all 30 containers at once; `unless-stopped` did *not* bring them back
+  because it looks like a manual stop. If you ever unhold and refresh, expect a full-fleet bounce
+  and use the ordered recovery in `references/deploy.md` (databases → npm/cloudflared/dockge → rest).
+- **Port 8888 is SnappyMail.** Before assigning any new port, check the live listeners and the
+  NPM `proxy_host` table — not just the README.
+- **Never commit `.env`.** Secrets live on the server only. `.env.example` files are the contract.
+- Prefer `sudo` over changing ownership on root-owned paths.
+
+## 6. Projects
+
+Read the card for whatever the task touches; skip the rest. Full detail in **`references/projects.md`**.
+
+| Project | Source | Stack dir | Port | Public at | State |
+|---|---|---|---|---|---|
+| **deckbuilder** ("vermilion") | [deckbuilder/](../../../deckbuilder/) | [stacks/deckbuilder/](../../../stacks/deckbuilder/) | 8099 (pg 5436) | `vermilion.cooldad.top` | LIVE, active development |
+| **lavender-dashboard** | [lavender-dashboard/](../../../lavender-dashboard/) | [stacks/lavender-dashboard/](../../../stacks/lavender-dashboard/) | 7575 | `celadon.cooldad.top` | stable |
+| **mcp-server** | [mcp-server/](../../../mcp-server/) | [stacks/mcp/](../../../stacks/mcp/) | 8765 | not exposed | stable, not wired to a client |
+| **stacks/** | — | — | — | — | doc mirror of the server |
+
+The **deckbuilder** is where nearly all recent work has happened, on branch `deckbuilder-build`
+(48 commits ahead of `main`). Its canonical design + decision log is
+[stacks/deckbuilder/PLAN.md](../../../stacks/deckbuilder/PLAN.md) **§2** — read that section before
+any deckbuilder work; it carries the locked decisions, the shipped-phase record, and the current
+backlog. Operational dev-loop and redeploy steps are in
+[deckbuilder/README.md](../../../deckbuilder/README.md).
+
+## 7. Which doc is canonical for what
+
+| Need | Read |
+|---|---|
+| Port map, subdomain table, stack index | [README.md](../../../README.md) |
+| Conventions, accumulated lessons, history | [AGENTS.md](../../../AGENTS.md) — deep archive, partly stale planning prose |
+| How one stack works, its volumes and quirks | `stacks/<name>/README.md` |
+| Deckbuilder design, decisions, status, backlog | [stacks/deckbuilder/PLAN.md](../../../stacks/deckbuilder/PLAN.md) §2 |
+| Deckbuilder visual/UX system | [stacks/deckbuilder/DESIGN.md](../../../stacks/deckbuilder/DESIGN.md) |
+| Deckbuilder dev loop + redeploy | [deckbuilder/README.md](../../../deckbuilder/README.md) |
+| Non-obvious infra gotchas not in the repo | memory: `reference_lavendertown_infra.md` |
+
+## 8. Verify, don't trust — known drift
+
+Recorded 2026-07-31. Check before relying on any of these; remove the entry once fixed.
+
+1. **`Test-cases/` does not exist locally.** [README.md](../../../README.md) and a large AGENTS.md
+   section describe it as a synced mirror, with `../Test-cases/README.md` links that are dead. The
+   work exists only on terrenceb-dl at
+   `/media/terrenceb/mnt/testbox_home/copilot/Test-cases/`.
+2. **`/root/stacks/satisfactory/` still exists** (2.8 GB of `data/`) though README says the whole
+   dir was deleted. Container and images are genuinely gone.
+3. **Vaultwarden's container is named `ef214b409b07_vaultwarden`** — an un-reverted AppArmor swap
+   artifact. `lavender-dashboard/app/config.py` maps `cinnabar` → `"vaultwarden"` and the join is
+   on exact name, so its dashboard card is not clickable. One `docker rename` fixes it.
+4. **`.DS_Store` is tracked in git** (repo root and `lavender-dashboard/app/`) despite `.gitignore`.
+5. AGENTS.md's "PLAN: Expanding HTTP/SSH to the MCP Server" was never executed — the MCP server is
+   still stdio-first. Treat that whole section as a proposal, not a description.
+
+## 9. Concurrent sessions
+
+Another Claude session may be working the same repo and server at the same time (this has already
+happened on deckbuilder). Before committing, check `git status` for changes you did not make, and
+do not assume an unexpected container or a dirty file is drift — it may be someone else's work in
+flight. Ask rather than clean up.
