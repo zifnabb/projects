@@ -87,7 +87,11 @@ and drift the moment there are two copies. Read them there when you need them.
 ## 5. Non-negotiables
 
 - **Restarting the whole `bigstackd` stack takes down `cloudflared`, which takes down all
-  remote access including SSH.** Restart `authentik-server authentik-worker` individually.
+  remote access including SSH.** Restart `authentik-server authentik-worker` individually. If you
+  ever must recreate `cloudflared` itself: verify the LAN path
+  (`ssh -o ProxyCommand=none mrfuji@192.168.1.222`) works first, hash-compare the tunnel token,
+  and run the whole sequence from a `setsid nohup` script on the server — never step-by-step over
+  SSH, which dies mid-sequence. Worked procedure in AGENTS.md → "TWO DOCKER DAEMONS".
 - **snap-Docker AppArmor intermittently blocks `docker stop`/`kill`/`compose down`** with
   "permission denied". The container keeps running. Redeploys need the PID-kill sequence in
   `references/deploy.md`. Never assume a stop succeeded — verify.
@@ -138,14 +142,7 @@ Open items as of 2026-07-31. Delete an entry once it's genuinely resolved.
    never executed (now annotated as such), and its "Current State" list claims stdio-only with no
    HTTP endpoint — yet `:8765` has a live listener. No MCP client is configured against the server
    either. Check `sudo ss -tlnp | grep 8765` before asserting anything about how it's reachable.
-2. **`cloudflared` is not Dockge-managed.** Its compose labels point at
-   `/data/compose/2/docker-compose.yml` — a *Portainer* stack path left over from before the Dockge
-   migration. All 29 other containers point at `/root/stacks/*`. The service *is* correctly defined
-   in `/root/stacks/bigstackd/compose.yaml` with `TUNNEL_TOKEN` in that stack's `.env`, so
-   recreating it is well-defined — but it drops the tunnel and your SSH with it, so it must be run
-   detached. Command is in AGENTS.md → "TWO DOCKER DAEMONS". Until then, the one container carrying
-   all external access is outside Dockge's control.
-3. **Anything named `<hexid>_<name>`** is a half-finished AppArmor container swap. Rename it back:
+2. **Anything named `<hexid>_<name>`** is a half-finished AppArmor container swap. Rename it back:
    the dashboard joins subdomains to containers on exact name, so the link breaks silently.
    (Vaultwarden was in this state until 2026-07-31.)
 

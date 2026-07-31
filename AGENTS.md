@@ -264,19 +264,35 @@ is driven with, so check what a purge would remove before running one.
 - `systemctl status docker.service` logs are a fast way to prove which daemon owns a container —
   the apt daemon was visibly logging the Satisfactory container's Steam DNS lookups.
 
-**OUTSTANDING — `cloudflared` is not Dockge-managed.** An audit of all 30 containers' compose
-labels found 29 pointing at `/root/stacks/*` (plus `dockge-dockge-1` self-managing from
-`/root/dockge/`). The exception is **`cloudflared`**, whose
-`com.docker.compose.project.config_files` is **`/data/compose/2/docker-compose.yml`** — a
-*Portainer* stack path. It was created by Portainer pre-migration and has never been recreated
-(it was last merely `docker start`ed during the 2026-07-25 snap-refresh recovery), so it kept the
-old labels. `/root/stacks/bigstackd/compose.yaml` does define the service correctly and
-`TUNNEL_TOKEN` is present in that stack's `.env`, so recreating it is well-defined — but it drops
-the tunnel and therefore SSH, so it must be run detached:
-```sh
-sudo bash -c 'cd /root/stacks/bigstackd && setsid nohup bash -c "docker compose up -d cloudflared" > /tmp/cf.log 2>&1 &'
-```
-Until that is done, Dockge cannot manage the one container that carries all external access.
+**`cloudflared` migrated onto Dockge — RESOLVED 2026-07-31.** An audit of all 30 containers'
+compose labels found 29 pointing at `/root/stacks/*` (plus `dockge-dockge-1` self-managing from
+`/root/dockge/`). The exception was **`cloudflared`**, whose
+`com.docker.compose.project.config_files` read **`/data/compose/2/docker-compose.yml`** — a
+*Portainer* stack path. It had been created by Portainer pre-migration and never recreated (only
+`docker start`ed during the 2026-07-25 snap-refresh recovery), so it kept the old labels. It now
+reads `/root/stacks/bigstackd/compose.yaml`. **All 30 containers are Dockge-managed.**
+
+Recreating the container that carries all external access needs care — the procedure that worked,
+and the one to reuse for any host-critical container:
+
+1. **Verify a way back in first.** `ssh -o ProxyCommand=none mrfuji@192.168.1.222` from the Mac,
+   confirmed working *before* touching anything. Without the LAN path a failed recreate is
+   unrecoverable remotely.
+2. **Prove the new container gets the same secret.** Compare the running container's
+   `TUNNEL_TOKEN` against the compose-resolved one **by sha256**, never by printing them. They
+   matched, which is what made the recreate safe rather than a gamble. Also `docker compose config -q`
+   to prove the file parses.
+3. **Put the whole sequence in a script on the server and run it `setsid nohup` detached.** Doing
+   it step-by-step over SSH cannot work: the connection dies with the container, mid-sequence.
+4. Script order: `docker update --restart=no` → PID-kill (AppArmor blocks `docker stop`) → poll for
+   exit → `docker rm -f` → `docker compose up -d --no-deps cloudflared` → adopt any `_cloudflared`
+   leftover → retry once if not running → `docker update --restart=unless-stopped` → log the result.
+   **`--no-deps` matters**: cloudflared `depends_on: pihole`, and bouncing Pi-hole would take
+   network DNS down with it.
+5. Read the log back over the **LAN** path, not the tunnel.
+
+Outage was roughly 15 seconds. Verified after: SSH via the tunnel, 30/30 containers, and ten
+subdomains all 200/302.
 
 ### MCP Test Cleanup (2026-06-24)
 During the final phase of MCP server repairs (per-service tools, dry_run, force, plan_action) and Invidious-style stop/start tests:
