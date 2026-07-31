@@ -169,7 +169,11 @@ export function SearchPanel({
   }
 
   /* ---- Syntax tab ---- */
-  const [rawInput, setRawInput] = useState("");
+  // default to the deck's format legality so raw searches are commander-legal
+  // out of the box (f:edh == format:commander on Scryfall); build on top or clear.
+  const [rawInput, setRawInput] = useState(
+    deck.format === "commander" ? "f:edh " : "",
+  );
   const [rawQuery, setRawQuery] = useState("");
 
   function runSyntax(e: FormEvent) {

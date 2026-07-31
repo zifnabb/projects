@@ -118,6 +118,14 @@
   .groupLabel {
     display: none;
   }
+  /* Search (1), Categories (3), Stats (7) live in the bottom action bar on
+     phone — drop the redundant top-toolbar buttons. Order in Toolbar.tsx:
+     1 Search · 2 Add card · 3 Categories · 4 View · 5 Group · 6 Sort · 7 Stats. */
+  .group:nth-child(1),
+  .group:nth-child(3),
+  .group:nth-child(7) {
+    display: none;
+  }
   /* Add card is the primary action: full-width, first. Order/flex must sit on
      the GROUP (the toolbar's flex child) — .quickAdd is nested inside it, so
      ordering it does nothing at the toolbar level. Add card = 2nd group. */

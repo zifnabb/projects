@@ -34,11 +34,6 @@
     width: 40px;
     height: 40px;
   }
-  /* no hover on touch: reveal each result's "+ Add" so quick-add is one tap */
-  .addOverlay {
-    opacity: 1;
-    pointer-events: auto;
-  }
 }
 
 .panelHeader {
@@ -238,6 +233,15 @@
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--motion-fast) var(--ease-out);
+}
+/* Touch has no hover: show "+ Add" on EVERY result so adding is one tap. Must
+   come after the base + :hover rules above (equal specificity → source order
+   wins) or the base opacity:0 would keep it hidden. */
+@media (max-width: 767px) {
+  .addOverlay {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 .loadMore {
   display: flex;
