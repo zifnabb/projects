@@ -10,6 +10,37 @@
   top: 0;
 }
 
+/* Phone: the rail is a full-screen sheet over the board (DESIGN §6.4), with its
+   own close button in the panel header. 100dvh tracks the browser chrome. */
+@media (max-width: 767px) {
+  .panel {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-overlay);
+    flex: 1 1 auto;
+    width: 100%;
+    height: 100dvh;
+    border-right: none;
+    padding-bottom: env(safe-area-inset-bottom);
+    /* this is a plain fixed sheet (no Radix scroll-lock) — keep flicks from
+       chaining to the board scrolling behind it */
+    overscroll-behavior: contain;
+  }
+  .results {
+    overscroll-behavior: contain;
+  }
+  /* the close X is the only way back to the board — comfortable touch target */
+  .iconButton {
+    width: 40px;
+    height: 40px;
+  }
+  /* no hover on touch: reveal each result's "+ Add" so quick-add is one tap */
+  .addOverlay {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
 .panelHeader {
   display: flex;
   align-items: center;

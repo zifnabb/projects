@@ -95,3 +95,17 @@
   color: var(--color-text-faint);
   flex-shrink: 0;
 }
+
+/* Phone: search takes its own full-width row under the brand/actions row. */
+@media (max-width: 767px) {
+  .wrap {
+    order: 3;
+    width: 100%;
+  }
+  .input {
+    height: 40px; /* comfortable touch target */
+  }
+  .mode {
+    padding: var(--space-2) var(--space-3);
+  }
+}

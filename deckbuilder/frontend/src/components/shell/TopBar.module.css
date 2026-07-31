@@ -106,3 +106,45 @@
   border: 1px solid var(--color-border-strong);
   cursor: pointer;
 }
+
+/* ---- Phone: two-row header — [brand … actions] then full-width search ---- */
+@media (max-width: 767px) {
+  .bar {
+    flex-wrap: wrap;
+    height: auto;
+    row-gap: var(--space-3);
+    column-gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    /* clear the notch on landscape / edge-to-edge phones */
+    padding-left: max(var(--space-4), env(safe-area-inset-left));
+    padding-right: max(var(--space-4), env(safe-area-inset-right));
+  }
+  .brandLink {
+    order: 1;
+  }
+  .right {
+    order: 2;
+    margin-left: auto; /* push actions to the end of row 1 */
+    gap: var(--space-2);
+  }
+  /* the search orders itself to row 3 (full width) from its own module */
+  .spacer {
+    display: none;
+  }
+  .navDecks {
+    display: none; /* wordmark already links home */
+  }
+  .newDeckLabel {
+    display: none; /* New Deck becomes an icon-only + button */
+  }
+  /* comfortable touch targets */
+  .iconButton {
+    width: 40px;
+    height: 40px;
+  }
+  .avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+}

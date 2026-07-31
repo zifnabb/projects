@@ -191,6 +191,26 @@ body,
   height: 100%;
 }
 
+/* Responsive breakpoints (convention — CSS can't put custom props in @media):
+   phone  = max-width: 767px   ·   tablet = 768px–1024px   ·   desktop ≥ 1025px.
+   The app is desktop-first; mobile styles live in `@media (max-width: 767px)`. */
+
+/* No page should ever scroll sideways. `clip` (not `hidden`) so it doesn't
+   create a scroll container that would break `position: sticky` on the top bar.
+   Applied to #root too — the SPA mount is the real width authority. */
+html,
+body,
+#root {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
+img,
+svg,
+video {
+  max-width: 100%;
+}
+
 body {
   margin: 0;
   background: var(--color-canvas);
@@ -216,6 +236,16 @@ a:hover {
 
 button {
   font-family: inherit;
+}
+
+/* On phones, form controls under 16px make iOS Safari auto-zoom on focus.
+   Force the minimum only where it matters — the visual size is close enough. */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
 }
 
 /* Visible accent focus ring on every interactive element (§6.1 / §11) */

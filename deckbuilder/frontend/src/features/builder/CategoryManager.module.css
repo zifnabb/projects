@@ -22,6 +22,28 @@
   flex-direction: column;
   gap: var(--space-5);
 }
+/* Phone: full-screen sheet. */
+@media (max-width: 767px) {
+  .content {
+    inset: 0;
+    top: 0;
+    left: 0;
+    transform: none;
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+    max-height: 100dvh;
+    border: none;
+    border-radius: 0;
+    padding: var(--space-6);
+    padding-top: max(var(--space-6), env(safe-area-inset-top));
+    padding-bottom: calc(var(--space-7) + env(safe-area-inset-bottom));
+  }
+  .close {
+    width: 40px;
+    height: 40px;
+  }
+}
 .titleRow {
   display: flex;
   align-items: center;
@@ -92,6 +114,47 @@
 }
 .grip:active {
   cursor: grabbing;
+}
+/* touch/keyboard reorder arrows — sit beside the drag grip */
+.moveButtons {
+  display: inline-flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+.moveButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 18px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  padding: 0;
+}
+.moveButton:hover:not(:disabled) {
+  background: var(--color-surface-sunken);
+  color: var(--color-text);
+}
+.moveButton:disabled {
+  color: var(--color-border-strong);
+  cursor: default;
+}
+/* comfortable stacked touch targets on phones */
+@media (max-width: 767px) {
+  .moveButton {
+    width: 40px;
+    height: 34px;
+  }
+  /* reclaim width for the category name — count is on the board + stats too */
+  .count {
+    display: none;
+  }
+  .targetInput {
+    width: 52px;
+  }
 }
 .nameInput {
   flex: 1;

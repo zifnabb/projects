@@ -293,14 +293,52 @@
   color: var(--color-text-faint);
 }
 
-@media (max-width: 720px) {
+@media (max-width: 767px) {
+  /* full-screen sheet — more room + native feel than a centered dialog */
   .content {
+    inset: 0;
+    top: 0;
+    left: 0;
+    transform: none;
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+    max-height: 100dvh;
+    border: none;
+    border-radius: 0;
     flex-direction: column;
     overflow-y: auto;
+    padding: var(--space-5);
+    padding-top: max(var(--space-5), env(safe-area-inset-top));
+    padding-bottom: calc(var(--space-6) + env(safe-area-inset-bottom));
+    gap: var(--space-5);
   }
   .left {
     flex: none;
-    max-width: 260px;
+    max-width: 320px;
     margin: 0 auto;
+  }
+  /* cap the card image so it never eats the whole viewport (landscape/SE) */
+  .left img {
+    max-height: 52vh;
+    width: auto;
+  }
+  /* the sheet scrolls as ONE column via .content; don't let .right/.tabContent
+     keep flex:1 + their own scroll, or a tall image crushes the tab pane to 0
+     (card text/rulings become an unreadable keyhole). Radix hides inactive
+     tabs, so total height stays bounded. */
+  .right {
+    flex: none;
+    min-height: auto;
+  }
+  .tabContent {
+    flex: none;
+    min-height: auto;
+    overflow: visible;
+  }
+  .close {
+    top: max(var(--space-4), env(safe-area-inset-top));
+    width: 40px;
+    height: 40px;
   }
 }

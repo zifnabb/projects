@@ -42,12 +42,14 @@ export function TopBar({
         <Wordmark size="sm" />
       </Link>
 
-      <Button variant="ghost" size="sm" asChild>
-        <Link to="/">
-          <LayoutGrid size={15} aria-hidden="true" />
-          Your decks
-        </Link>
-      </Button>
+      <span className={styles.navDecks}>
+        <Button variant="ghost" size="sm" asChild>
+          <Link to="/">
+            <LayoutGrid size={15} aria-hidden="true" />
+            Your decks
+          </Link>
+        </Button>
+      </span>
 
       <span className={styles.spacer} />
       <UnifiedSearch onOpenCard={onOpenCard} />
@@ -65,9 +67,9 @@ export function TopBar({
           {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
-        <Button variant="primary" size="md" onClick={onNewDeck}>
+        <Button variant="primary" size="md" onClick={onNewDeck} aria-label="New Deck">
           <Plus size={16} aria-hidden="true" />
-          New Deck
+          <span className={styles.newDeckLabel}>New Deck</span>
         </Button>
 
         <DropdownMenu.Root>

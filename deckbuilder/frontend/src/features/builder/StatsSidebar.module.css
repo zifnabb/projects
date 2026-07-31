@@ -13,6 +13,25 @@
   top: 0;
 }
 
+/* Phone: full-screen sheet over the board (DESIGN §6.4); close in the header. */
+@media (max-width: 767px) {
+  .panel {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-overlay);
+    flex: 1 1 auto;
+    width: 100%;
+    height: 100dvh;
+    border-left: none;
+    padding-bottom: calc(var(--space-6) + env(safe-area-inset-bottom));
+    overscroll-behavior: contain; /* don't scroll-chain to the board behind */
+  }
+  .iconButton {
+    width: 40px;
+    height: 40px;
+  }
+}
+
 .headerRow {
   display: flex;
   align-items: center;

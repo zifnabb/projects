@@ -5,7 +5,7 @@
  */
 import { useState, type DragEvent, type KeyboardEvent } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { GripVertical, Plus, Trash2, X } from "lucide-react";
+import { ChevronDown, ChevronUp, GripVertical, Plus, Trash2, X } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import type { DeckCategoryOut, DeckFull } from "../../lib/types";
 import { decksApi, useDeckMutation, type CategoryBody } from "../decks/api";
@@ -24,6 +24,10 @@ function CategoryRow({
   dropIndicator,
   onSave,
   onDelete,
+  onMoveUp,
+  onMoveDown,
+  canMoveUp,
+  canMoveDown,
   onDragStart,
   onDragEnd,
   onDragOver,
@@ -35,6 +39,11 @@ function CategoryRow({
   dropIndicator: boolean;
   onSave: (body: CategoryBody) => void;
   onDelete: () => void;
+  /** touch/keyboard reorder path (drag doesn't fire on touch) */
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
   onDragStart: (e: DragEvent) => void;
   onDragEnd: () => void;
   onDragOver: (e: DragEvent) => void;
@@ -82,6 +91,29 @@ function CategoryRow({
         title="Drag to reorder"
       >
         <GripVertical size={14} />
+      </span>
+      {/* touch/keyboard reorder — HTML5 drag doesn't fire on touch */}
+      <span className={styles.moveButtons}>
+        <button
+          type="button"
+          className={styles.moveButton}
+          onClick={onMoveUp}
+          disabled={!canMoveUp}
+          aria-label={`Move ${cat.name} up`}
+          title="Move up"
+        >
+          <ChevronUp size={14} />
+        </button>
+        <button
+          type="button"
+          className={styles.moveButton}
+          onClick={onMoveDown}
+          disabled={!canMoveDown}
+          aria-label={`Move ${cat.name} down`}
+          title="Move down"
+        >
+          <ChevronDown size={14} />
+        </button>
       </span>
       <input
         className={styles.nameInput}
@@ -223,7 +255,7 @@ export function CategoryManager({
                 <span className={styles.headerName}>Name</span>
                 <span className={styles.headerTargets}>Target (min–max)</span>
               </div>
-              {deck.categories.map((cat) => (
+              {deck.categories.map((cat, i) => (
                 <CategoryRow
                   // remount on save so inputs resync with the server response
                   key={`${cat.id}:${cat.name}:${cat.target_min}:${cat.target_max}`}
@@ -234,6 +266,18 @@ export function CategoryManager({
                     updateCategory.mutate({ categoryId: cat.id, body })
                   }
                   onDelete={() => deleteCategory.mutate(cat.id)}
+                  canMoveUp={i > 0}
+                  canMoveDown={i < deck.categories.length - 1}
+                  onMoveUp={() => {
+                    const order = deck.categories.map((c) => c.id);
+                    [order[i - 1], order[i]] = [order[i], order[i - 1]];
+                    reorder.mutate(order);
+                  }}
+                  onMoveDown={() => {
+                    const order = deck.categories.map((c) => c.id);
+                    [order[i], order[i + 1]] = [order[i + 1], order[i]];
+                    reorder.mutate(order);
+                  }}
                   onDragStart={(e) => {
                     e.dataTransfer.setData(CAT_DRAG_MIME, cat.id);
                     e.dataTransfer.effectAllowed = "move";
@@ -285,9 +329,9 @@ export function CategoryManager({
           </form>
 
           <p className={styles.hint}>
-            Drag the grip to reorder columns. Deleting a category doesn't
-            remove its cards — they become Uncategorized. Assign cards from a
-            card's ⋯ menu or by dragging them between columns.
+            Drag the grip (or use the ↑↓ arrows) to reorder columns. Deleting a
+            category doesn't remove its cards — they become Uncategorized. Assign
+            cards from a card's ⋯ menu or by dragging them between columns.
           </p>
         </Dialog.Content>
       </Dialog.Portal>

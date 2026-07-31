@@ -86,3 +86,35 @@
     opacity: 0.55;
   }
 }
+
+@media (max-width: 767px) {
+  .page {
+    padding: var(--space-6) var(--space-5);
+    padding-left: max(var(--space-5), env(safe-area-inset-left));
+    padding-right: max(var(--space-5), env(safe-area-inset-right));
+    gap: var(--space-6);
+  }
+  /* title on its own line, the filter + sort controls wrap full-width below */
+  .headerRow {
+    flex-wrap: wrap;
+    gap: var(--space-4);
+  }
+  .spacer {
+    display: none;
+  }
+  .controls {
+    flex: 1 1 100%;
+  }
+  .controls > :first-child {
+    flex: 1;
+    min-width: 0; /* let the filter field shrink instead of overflowing */
+  }
+  .grid {
+    grid-template-columns: 1fr; /* one deck tile per row */
+    gap: var(--space-5);
+  }
+  .emptyTitle {
+    font-size: 22px;
+    line-height: 28px;
+  }
+}

@@ -106,3 +106,48 @@
   flex-shrink: 0;
   font-size: 10px;
 }
+
+/* ---- Phone: compact wrapping toolbar, full-width quick-add --------------- */
+@media (max-width: 767px) {
+  .toolbar {
+    gap: var(--space-3) var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    align-items: stretch;
+  }
+  /* drop the uppercase labels — the controls read for themselves on a phone */
+  .groupLabel {
+    display: none;
+  }
+  /* Add card is the primary action: full-width, first. Order/flex must sit on
+     the GROUP (the toolbar's flex child) — .quickAdd is nested inside it, so
+     ordering it does nothing at the toolbar level. Add card = 2nd group. */
+  .toolbar > .group:nth-child(2) {
+    order: -2;
+    flex: 1 1 100%;
+  }
+  .quickAdd {
+    width: 100%;
+  }
+  .quickAddInput {
+    height: 40px;
+  }
+  .results {
+    width: 100%;
+  }
+  /* Card search button gets its own full row next (opens the search sheet) */
+  .toolbar > .group:first-child {
+    order: -1;
+    flex: 1 1 100%;
+  }
+  .toolbar > .group:first-child button {
+    width: 100%;
+  }
+  /* view / group / sort / categories / stats share rows, growing evenly */
+  .group {
+    flex: 1 1 40%;
+  }
+  .select {
+    height: 40px;
+    width: 100%;
+  }
+}
