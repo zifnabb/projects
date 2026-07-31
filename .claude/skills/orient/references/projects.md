@@ -101,7 +101,8 @@ Two caveats:
 - **No MCP client is configured against it** — `~/.claude.json` has no `mcpServers` entry for this
   project. It runs, but nothing is using it.
 - AGENTS.md contains a long "PLAN: Expanding HTTP/SSH to the MCP Server" that was **never
-  executed**. Read it as a proposal.
+  executed** (annotated as such 2026-07-31). Its "Current State" list is stale too — it says
+  stdio-only with no HTTP endpoint, but `:8765` is listening. Probe before asserting.
 
 It has near-root control of Docker. Never expose it without auth.
 
@@ -127,6 +128,7 @@ TestLink/Jira/Zephyr manual-test-case enrichment for AWPTCM, living at
 Objectives for manual cases from TestLink history plus enriched ATPyLib automated suites, and to
 record many-to-one suite→case mappings.
 
-The READMEs here describe a local mirror at `Test-cases/` that **does not exist** — the links to
-it are dead. Work on it over the nested SSH hop (see `references/access.md`) and check with the
-user before recreating a local copy.
+There is **no local copy** in this repo. The README and AGENTS.md used to claim one and linked to
+a `Test-cases/README.md` that never existed; both were corrected 2026-07-31. Work on it over the
+nested SSH hop (see `references/access.md`), and check with the user before creating a local
+copy — the tree contains `secrets.md` with live JIRA and TestLink keys.

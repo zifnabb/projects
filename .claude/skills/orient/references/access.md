@@ -70,9 +70,9 @@ ssh mrfuji@diglettscave.cooldad.top \
   | tar xzf - -C Test-cases/
 ```
 
-Note: `Test-cases/` is currently **absent** from this repo despite the READMEs describing it as a
-synced mirror. Confirm with the user before recreating it — the remote copy is authoritative
-either way.
+Note: there is **no** `Test-cases/` directory in this repo, and no tracked mirror is intended.
+Confirm with the user before creating one — a naive rsync drags `secrets.md` (live JIRA and
+TestLink keys) into a git repo.
 
 ## Tunnels from the Mac
 

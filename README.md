@@ -17,8 +17,8 @@ Documentation and Docker Compose configurations for managing homelab container s
 ### Internal / Test Hosts
 - `terrenceb-dl` (10.33.22.17) — internal development/test box, accessed via nested SSH through LavenderTown.
 - Important path for test work: `/media/terrenceb/mnt/testbox_home/copilot/Test-cases/` (enrichment, JIRA/Testlink tooling and data).
-- The `Test-cases/` directory in this repo is a synced mirror of the above location.
-- See [Test-cases/README.md](Test-cases/README.md) for the full project framing: improving AWPTCM Manual Test Cases by deriving Objectives from TestLink history + enriched Automated Suites, plus many-to-one suite-to-manual mappings. Also referenced from [AGENTS.md](AGENTS.md).
+- **That tree is remote-only — there is no `Test-cases/` directory in this repo** (as of 2026-07-31). Earlier revisions described a local mirror and linked to `Test-cases/README.md`; neither exists. Sync patterns for pulling a working copy down are in [AGENTS.md](AGENTS.md).
+- Project framing: improving AWPTCM Manual Test Cases by deriving Objectives from TestLink history + enriched Automated Suites, plus many-to-one suite-to-manual mappings.
 
 ## Stacks
 
@@ -159,6 +159,6 @@ The `bkstacker` stack on the server is the original monolith that all current st
 
 - **LunaMultiplayer (LMP / lunamultiplayer)**: KSP multiplayer server (PlagueNZ SplitProgression fork). All containers and custom `lmp-splitprog:*` images removed. The server-side stack directory no longer exists. UDP port 8800 service discontinued. See `stacks/lunamultiplayer/README.md` (archived) for historical configuration and universe notes. **No longer required or maintained until further notice.**
 
-- **Satisfactory**: Test game server (`wolveix/satisfactory-server`). Container and image removed. The entire `/root/stacks/satisfactory/` stack directory (including compose, data, and backups) has been deleted. Previously used as a non-critical test target.
+- **Satisfactory**: Test game server (`wolveix/satisfactory-server`). Container and image removed. Previously used as a non-critical test target. **Correction (2026-07-31)**: this previously claimed the whole stack directory was deleted. `/root/stacks/satisfactory/` still exists on the server, holding **2.8 GB** under `data/` — compose and backups are gone, the save data is not. Reclaimable whenever the saves are confirmed unwanted.
 
 These services have been fully purged from Docker and the stack layout. Documentation has been annotated; they can be reintroduced later if needed.

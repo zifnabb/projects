@@ -130,22 +130,24 @@ backlog. Operational dev-loop and redeploy steps are in
 | Deckbuilder dev loop + redeploy | [deckbuilder/README.md](../../../deckbuilder/README.md) |
 | Non-obvious infra gotchas not in the repo | memory: `reference_lavendertown_infra.md` |
 
-## 8. Verify, don't trust — known drift
+## 8. Verify, don't trust
 
-Recorded 2026-07-31. Check before relying on any of these; remove the entry once fixed.
+Open items as of 2026-07-31. Delete an entry once it's genuinely resolved.
 
-1. **`Test-cases/` does not exist locally.** [README.md](../../../README.md) and a large AGENTS.md
-   section describe it as a synced mirror, with `../Test-cases/README.md` links that are dead. The
-   work exists only on terrenceb-dl at
-   `/media/terrenceb/mnt/testbox_home/copilot/Test-cases/`.
-2. **`/root/stacks/satisfactory/` still exists** (2.8 GB of `data/`) though README says the whole
-   dir was deleted. Container and images are genuinely gone.
-3. **Vaultwarden's container is named `ef214b409b07_vaultwarden`** — an un-reverted AppArmor swap
-   artifact. `lavender-dashboard/app/config.py` maps `cinnabar` → `"vaultwarden"` and the join is
-   on exact name, so its dashboard card is not clickable. One `docker rename` fixes it.
-4. **`.DS_Store` is tracked in git** (repo root and `lavender-dashboard/app/`) despite `.gitignore`.
-5. AGENTS.md's "PLAN: Expanding HTTP/SSH to the MCP Server" was never executed — the MCP server is
-   still stdio-first. Treat that whole section as a proposal, not a description.
+1. **MCP transport is ambiguous.** AGENTS.md's "PLAN: Expanding HTTP/SSH to the MCP Server" was
+   never executed (now annotated as such), and its "Current State" list claims stdio-only with no
+   HTTP endpoint — yet `:8765` has a live listener. No MCP client is configured against the server
+   either. Check `sudo ss -tlnp | grep 8765` before asserting anything about how it's reachable.
+2. **`/root/stacks/satisfactory/` holds 2.8 GB of save data.** The README now says so accurately;
+   the open question is whether the saves are wanted. Ask before reclaiming — deleting them is
+   irreversible.
+3. **Anything named `<hexid>_<name>`** is a half-finished AppArmor container swap. Rename it back:
+   the dashboard joins subdomains to containers on exact name, so the link breaks silently.
+   (Vaultwarden was in this state until 2026-07-31.)
+
+An earlier drift audit on 2026-07-31 cleared four items — dead `Test-cases/` mirror claims in
+README/AGENTS, the Satisfactory deletion claim, the Vaultwarden container name, and two tracked
+`.DS_Store` files. The record is in AGENTS.md → "Re-verification (2026-07-31)".
 
 ## 9. Concurrent sessions
 

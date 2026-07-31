@@ -66,13 +66,12 @@ Always use `-o BatchMode=yes` and reasonable `-o ConnectTimeout` for non-interac
     - `tool/` — Python utilities (extract_testlink.py, extract_zephyr.py, build_candidates.py, render_batches.py, common.py, etc.)
     - Root files: findings.md, resources.md, ENRICHMENT_QUALITY_ANALYSIS.md, VALIDATION_RESULTS.md, review.html, secrets.md, .gitignore
   - `secrets.md` holds `JIRA_KEY` and `TESTLINK_DEVKEY` (used by the extraction scripts).
-- **See [Test-cases/README.md](../Test-cases/README.md) for the full project framing**: The work improves Manual Test Cases (AWPTCM-Txxxx) by synthesizing Objectives from TestLink history and enriched Automated Suites, while recording many-to-one Test Suite → Manual Case mappings.
-- Local mirror: The `Test-cases/` directory in this repo (`projects/Test-cases/`) is kept in sync with the remote path above.
-  - Use the rsync/tar patterns documented in SSH & Access Patterns.
-  - Previously treated as "ignore for homelab stack verification"; now actively maintained as a working copy.
+- **Project framing**: The work improves Manual Test Cases (AWPTCM-Txxxx) by synthesizing Objectives from TestLink history and enriched Automated Suites, while recording many-to-one Test Suite → Manual Case mappings. (This used to link to `Test-cases/README.md` — see the correction below.)
+- **CORRECTION (2026-07-31): there is no local mirror.** This file and the root README both described `projects/Test-cases/` as a synced working copy and linked to `Test-cases/README.md`. The directory does not exist in the repo and never appears in its git history; the links were dead (and pointed *outside* the repo — `../Test-cases/`). The remote tree on terrenceb-dl is the only copy and is authoritative.
+  - The rsync/tar patterns in SSH & Access Patterns still work if a local working copy is wanted — confirm with the user before creating one, since it would bring `secrets.md` (JIRA + TestLink keys) into a git repo.
 - Typical workflow:
   1. Do heavy data extraction/enrichment/validation work on terrenceb-dl (where the keys and large datasets live).
-  2. Periodically sync the `Test-cases/` tree back to the local projects repo for version control / sharing.
+  2. Any local copy is a transient working convenience, not a tracked mirror.
 - Note on naming: The mount is `testbox_home` (underscore). The test work lives under a `copilot/` subfolder.
 
 ## RDP / Desktop Access (xrdp + XFCE4)
@@ -151,9 +150,9 @@ For services that build locally (like lavender-dashboard and mcp-server):
 - Stack dir writes (`/root/stacks/*`): mrfuji cannot traverse/write directly. Use `ssh ... 'sudo ...'` (tar pipe, cp, docker commands) or temp `sudo chown mrfuji ...` + operation + `sudo chown -R root ...`. Tar-over-ssh with sudo on extract is reliable for bulk syncs.
 - After heavy test container creation (multiple host-net MCPs on 876x), always explicitly clean variants (`docker ps -aq --filter name=... | xargs sudo docker rm -f`) before restoring the canonical named container.
 - **Terrenceb-dl file sync**: rsync with the double `-e 'ssh ... ssh ...'` works well for mirroring `Test-cases/`. Tar pipe is a simple fallback. Keep secrets.md in sync (contains JIRA + Testlink keys for the tool/ scripts).
-- Test-cases work (enrichment, JIRA/Testlink/Zephyr extraction, suite validation) is primarily done on terrenceb-dl. The local copy in this repo is for versioning and sharing the scripts + data artifacts. The authoritative location is the remote `/media/terrenceb/mnt/testbox_home/copilot/Test-cases/`.
-- When the user says "update the local copy" for Test-cases, perform a full rsync from terrenceb-dl (as done 2026-06-24).
-- For the complete project purpose (improving AWPTCM Manual Test Cases via Objectives from TestLink + enriched ATPyLib suites, plus many-to-one mappings), see the [Test-cases/README.md](../Test-cases/README.md).
+- Test-cases work (enrichment, JIRA/Testlink/Zephyr extraction, suite validation) is done on terrenceb-dl. The authoritative — and as of 2026-07-31 the *only* — location is the remote `/media/terrenceb/mnt/testbox_home/copilot/Test-cases/`. There is no local copy in this repo (see the correction in the Terrenceb-dl section).
+- If asked to "update the local copy" of Test-cases, note that none exists and confirm whether one should be created before rsyncing — the tree contains `secrets.md` with live JIRA + TestLink keys.
+- The complete project purpose (improving AWPTCM Manual Test Cases via Objectives from TestLink + enriched ATPyLib suites, plus many-to-one mappings) is summarised in the Terrenceb-dl section above and in the remote tree's own README.
 
 ## Useful Commands (from conversation)
 ```sh
@@ -211,7 +210,7 @@ Update this file when new patterns, gotchas, or services are added.
 ## Verification Findings (June 2026)
 After exhaustive review of all files:
 
-**Note on Test-cases/**: This directory (both locally and on remote) was previously ignored during homelab stack verification because it is separate test/enrichment tooling rather than part of the Docker stacks. It is now actively synced and documented (see "Terrenceb-dl and Test Work" section and [Test-cases/README.md](../Test-cases/README.md) for full framing). When reviewing homelab docs, you can still focus on stacks/, lavender-dashboard/, mcp-server/, and root files, but Test-cases/ is a first-class mirror of work done on terrenceb-dl.
+**Note on Test-cases/**: Separate test/enrichment tooling, not part of the Docker stacks, so it sits outside homelab stack verification. It lives only on terrenceb-dl — the local mirror this section once described does not exist (correction dated 2026-07-31 in the Terrenceb-dl section). When reviewing homelab docs, focus on stacks/, lavender-dashboard/, mcp-server/, deckbuilder/, and root files.
 
 - Most documentation is accurate and consistent with compose files, source code, and stack READMEs.
 - Key updates made to resolve inaccuracies:
@@ -225,7 +224,14 @@ After exhaustive review of all files:
 - Lunamultiplayer (deprecated/removed July 2026): local mirror dir retained with archived README for history; no compose on server or in active use.
 - No other major contradictions found. Some runtime container names (e.g. "dockge-dockge-1") differ from compose but are expected.
 - AGENTS.md itself was created/updated during this process to capture lessons.
-- Test-cases/ directory is a synced mirror of remote work on terrenceb-dl (see dedicated section above). It is no longer blindly ignored during reviews when relevant context is needed.
+- Test-cases/ work lives on terrenceb-dl (see dedicated section above); the "synced mirror" this list once claimed was never real.
+
+### Re-verification (2026-07-31)
+Prompted by building the `/orient` skill. Four drift items found and corrected:
+- **Test-cases/**: documented as a local synced mirror in this file and the root README; no such directory exists, and the `../Test-cases/README.md` links were dead. Both files corrected.
+- **Satisfactory**: root README claimed the whole `/root/stacks/satisfactory/` dir was deleted; it still holds 2.8 GB under `data/`. README corrected; the saves are still on disk pending a decision.
+- **Vaultwarden container** was still named `ef214b409b07_vaultwarden` from an AppArmor container swap. Because `lavender-dashboard` joins subdomains to containers on exact name, its dashboard card had silently lost its link to `cinnabar.cooldad.top`. Renamed back to `vaultwarden` (no restart; uptime and health preserved). **Any time a swap leaves a `<hexid>_<name>` container, rename it back — the dashboard link breaks quietly.**
+- **`.DS_Store`** was tracked at the repo root and in `lavender-dashboard/app/` despite `.gitignore`; untracked via `git rm --cached`. `.claude/settings.local.json` added to `.gitignore` — it holds per-machine permission grants including a one-time Authentik recovery token.
 
 ### MCP Test Cleanup (2026-06-24)
 During the final phase of MCP server repairs (per-service tools, dry_run, force, plan_action) and Invidious-style stop/start tests:
@@ -482,6 +488,13 @@ The MCP server gives local AI "eyes and hands" on your Docker homelab. Choose th
 Last updated: 2026-06-24 (added terrenceb-dl / Testbox-home / Test-cases details, nested rsync patterns, expanded SSH + lessons from recent sessions)
 
 ## PLAN: Expanding HTTP/SSH Connections to the MCP Server
+
+> **NEVER EXECUTED — read this section as a proposal, not a description (annotated 2026-07-31).**
+> No phase below was carried out. There is also no MCP client configured against the server
+> today: `~/.claude.json` has no `mcpServers` entry for this project, so `lavender-mcp` runs but
+> nothing consumes it. Note the "Current State" list immediately below is itself stale — it says
+> stdio-only with no HTTP endpoint, but the container does have a listener on `:8765`
+> (confirmed live 2026-07-31). Verify with `sudo ss -tlnp | grep 8765` before relying on either claim.
 
 **Goal**: Allow local AI agents to connect to the MCP server over HTTP (web transport) and improve/expand SSH-based connections, while strictly respecting homelab constraints.
 

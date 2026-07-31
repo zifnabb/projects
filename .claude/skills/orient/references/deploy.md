@@ -52,7 +52,9 @@ and nothing else distinguishes that from success.
 
 **Leftover from a missed rename:** if a container shows up as `<hexid>_<name>`, the swap was never
 completed. `docker rename` it back — the dashboard joins containers to subdomains on exact name,
-so a mis-named container silently loses its link. (Vaultwarden is in this state today.)
+so a mis-named container silently loses its link, and compose's `container_name:` no longer
+matches what's running. Renaming is safe: no restart, uptime and health are preserved.
+(Vaultwarden sat as `ef214b409b07_vaultwarden` for weeks before this was caught.)
 
 ## Exposing a new service publicly
 
